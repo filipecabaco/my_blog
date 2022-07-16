@@ -5,6 +5,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content={csrf_token_value()} />
+    <%= if @conn && Map.get(@conn.assigns, :title) do %>
+      <meta property="og:title" content={@page_title} />
+      <meta property="og:url" content={BlogWeb.Endpoint.url() <> Routes.post_show_path(@conn, :show, @title)} />
+      <meta property="og:image" content={BlogWeb.Endpoint.url() <> Routes.static_path(@conn, "/images/logo.svg")} />
+    <% end %>
     <%= live_title_tag(assigns[:page_title] || "", prefix: "Filipe Cabaco Blog - ") %>
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")} />
     <script defer phx-track-static type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js")}>
