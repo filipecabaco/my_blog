@@ -38,8 +38,8 @@ defmodule Blog.Posts do
     @url
     |> Req.get!(headers: headers())
     |> then(& &1.body)
-    |> IO.inspect()
     |> Enum.map(& &1["name"])
+    |> Enum.sort(:desc)
   end
 
   defp fetch_post(title) do
