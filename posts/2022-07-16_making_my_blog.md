@@ -62,7 +62,7 @@ This doesn't look quite right... Fortunately there's a method that can help us w
 ```
 
 Leading us to the final result
-![Image showing the post properly rendered](/images/img3.png)
+![Image showing the post properly rendered](/images/img4.png)
 
 And that is it! Not adding more bells and whistles (for now) and found out a couple of really cool methods from Phoenix!
 
