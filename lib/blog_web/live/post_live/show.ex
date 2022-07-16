@@ -10,10 +10,14 @@ defmodule BlogWeb.PostLive.Show do
 
   @impl true
   def handle_params(%{"title" => title}, _, socket) do
+    post = Posts.get_post!(title)
+    description = Posts.description(post)
+
     {:noreply,
      socket
      |> assign(:page_title, Phoenix.Naming.humanize(title))
      |> assign(:title, title)
-     |> assign(:post, Posts.get_post!(title))}
+     |> assign(:description, description)
+     |> assign(:post, Posts.parse(post))}
   end
 end

@@ -7,9 +7,6 @@ config :blog, BlogWeb.Endpoint,
   secret_key_base: "ljEslM5fxL4Vj9gkljtfuIUvoRywW6Tms8ZpnJEU8Pt0VWjAGgzpxxGadPvthoOs",
   server: false
 
-# In test we don't send emails.
-config :blog, Blog.Mailer, adapter: Swoosh.Adapters.Test
-
 # Print only warnings and errors during test
 config :logger, level: :warn
 

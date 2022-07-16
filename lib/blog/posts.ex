@@ -1,10 +1,8 @@
 defmodule Blog.Posts do
   use Agent
   @url "https://api.github.com/repos/filipecabaco/my_blog/contents/posts"
-  ## Starts the agent
   def start_link(_), do: Agent.start_link(fn -> %{titles: [], posts: %{}} end, name: __MODULE__)
 
-  ## Fetches list of posts from memory otherwise makes a request
   def list_post do
     Agent.get_and_update(__MODULE__, fn
       %{titles: []} = state ->
@@ -16,7 +14,6 @@ defmodule Blog.Posts do
     end)
   end
 
-  ## Fetches post from memory otherwise makes a request
   def get_post!(title) do
     Agent.get_and_update(__MODULE__, fn
       %{posts: posts} = state when not is_map_key(posts, title) ->
@@ -26,6 +23,15 @@ defmodule Blog.Posts do
       %{posts: %{^title => post}} = state ->
         {post, state}
     end)
+  end
+
+  def description(post) do
+    [_, description] = Regex.run(~r/# .*\n\n(.*)/, post)
+    description
+  end
+
+  def parse(post) do
+    Earmark.as_html!(post)
   end
 
   defp fetch_titles do
@@ -40,7 +46,7 @@ defmodule Blog.Posts do
     |> Req.get!(headers: headers())
     |> then(& &1.body["download_url"])
     |> Req.get!(headers: headers())
-    |> then(&Earmark.as_html!(&1.body))
+    |> then(& &1.body)
   end
 
   defp headers(), do: [{"Authorization", "Bearer #{token()}"}]
