@@ -23,4 +23,6 @@ if config_env() == :prod do
       port: port
     ],
     secret_key_base: secret_key_base
+
+  config :blog, :github_token, System.get_env("GITHUB_API_TOKEN")
 end
