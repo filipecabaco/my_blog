@@ -2,7 +2,7 @@
 
 In an homage to 90's websites I wanted to add a read counter but with a modern twist... DETS, GenServer, Telemetry, Phoenix.LiveView, Phoenix.PubSub we will create a counter that has live updates so we can track how many people actually read the content 🧐.
 
-Do not forget that all of the code from this post and others is in this [repository](https://github.com/filipecabaco/my_blog)
+Do not forget that all of the code from this post and others is in this [repository](https://github.com/filipecabaco/my_blog).
 
 ## What is DETS
 
@@ -10,7 +10,7 @@ If you worked with Elixir or Erlang you've heard about [ETS](https://www.erlang.
 
 That's where [DETS](https://www.erlang.org/doc/man/dets.html) enters! It's a flavour of ETS but disk based.
 
-So lets start our small adventure
+So lets start our small adventure.
 
 ## Starting DETS
 
@@ -36,7 +36,13 @@ defmodule Blog.Statistics do
   end
 
   @impl true
-  def terminate(_reason, _state), do: :dets.close(:statistics) # Close file
+  def terminate(_reason, _state), do: :dets.close(:statistics)
+
+  @impl true
+  def handle_info({:EXIT, _pid, reason}, state) do
+    :dets.close(:statistics)
+    {:stop, reason, state}
+  end
 end
 ```
 
@@ -52,7 +58,7 @@ defmodule Blog.Statistics do
   def fetch(title), do: GenServer.call(__MODULE__, {:fetch, title})
 end
 ```
-We're also adding an helping method to make the call to our system more user friendly - `Blog.Statistics.fetch("title")` instead of `GenServer.call(Blog.Statistics, {:fetch, "title"})`
+We're also adding an helping method to make the call to our system more user friendly - `Blog.Statistics.fetch("title")` instead of `GenServer.call(Blog.Statistics, {:fetch, "title"})`.
 
 ## Setting up telemetry
 

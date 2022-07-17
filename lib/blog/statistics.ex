@@ -6,7 +6,7 @@ defmodule Blog.Statistics do
   @impl true
   def init(path) do
     :ok = File.mkdir_p(path)
-    {:ok, :statistics} = :dets.open_file(:statistics, [{:file, to_charlist("#{path}/statistics")}])
+    {:ok, :statistics} = :dets.open_file(:statistics, [{:file, to_charlist("#{path}statistics")}])
 
     Enum.each(Posts.list_post(), fn title ->
       key = title |> String.replace(".md", "") |> to_charlist()
@@ -19,6 +19,12 @@ defmodule Blog.Statistics do
 
   @impl true
   def terminate(_reason, _state), do: :dets.close(:statistics)
+
+  @impl true
+  def handle_info({:EXIT, _pid, reason}, state) do
+    :dets.close(:statistics)
+    {:stop, reason, state}
+  end
 
   @impl true
   def handle_call({:fetch, title}, _, state) do
