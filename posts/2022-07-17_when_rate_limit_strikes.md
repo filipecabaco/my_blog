@@ -7,7 +7,7 @@ Do not forget that all of the code from this post and others is in this [reposit
 ## Setting up my cache
 Since I need to deploy the application each time I'm posting new content it's not a problem to have no TTL functionality and let it live for as long as it wants.
 
-As such, I'm going to use (Agent)[https://hexdocs.pm/elixir/1.13.4/Agent.html].
+As such, I'm going to use [Agent](https://hexdocs.pm/elixir/1.13.4/Agent.html) .
 
 On my `lib/blog/posts.ex` I will start my Agent with some minimum state
 ```elixir

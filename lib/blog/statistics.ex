@@ -28,7 +28,12 @@ defmodule Blog.Statistics do
 
   @impl true
   def handle_call({:fetch, title}, _, state) do
-    [{_, counter}] = :dets.lookup(:statistics, to_charlist(title))
+    counter =
+      case :dets.lookup(:statistics, to_charlist(title)) do
+        [{_, counter}] -> counter
+        _ -> 0
+      end
+
     {:reply, counter, state}
   end
 

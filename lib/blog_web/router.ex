@@ -18,6 +18,7 @@ defmodule BlogWeb.Router do
     pipe_through(:browser)
     live("/", PostLive.Index, :index)
     live("/post/:title", PostLive.Show, :show)
+    live("/open_dashboard", OpenDashboardLive.Index, :index)
   end
 
   # Other scopes may use custom stacks.
