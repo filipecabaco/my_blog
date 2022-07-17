@@ -9,7 +9,8 @@ defmodule Blog.Application do
       BlogWeb.Telemetry,
       {Phoenix.PubSub, name: Blog.PubSub},
       BlogWeb.Endpoint,
-      Blog.Posts
+      Blog.Posts,
+      {Blog.Statistics, "/tmp/blog/"}
     ]
 
     opts = [strategy: :one_for_one, name: Blog.Supervisor]

@@ -1,2 +1,3 @@
 <%= raw(@post) %>
 <span><%= live_redirect("Back", to: Routes.post_index_path(@socket, :index)) %></span>
+<div>Total readers: <%=@counter%></div>

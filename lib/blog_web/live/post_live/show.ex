@@ -4,8 +4,9 @@ defmodule BlogWeb.PostLive.Show do
   alias Blog.Posts
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, socket}
+  def mount(%{"title" => title}, _session, socket) do
+    BlogWeb.Endpoint.subscribe("show")
+    {:ok, assign(socket, :counter, Blog.Statistics.fetch(title))}
   end
 
   @impl true
@@ -20,4 +21,18 @@ defmodule BlogWeb.PostLive.Show do
      |> assign(:description, description)
      |> assign(:post, Posts.parse(post))}
   end
+
+  @impl true
+  def handle_info(%{event: "reader"}, socket) do
+    title = socket.assigns.title
+    :telemetry.execute([:blog, :visit], %{}, %{title: title})
+    BlogWeb.Endpoint.broadcast("show", "join", %{title: title})
+    {:noreply, socket}
+  end
+
+  def handle_info(%{event: "join", payload: %{title: title}}, %{assigns: %{title: title}} = socket) do
+    {:noreply, assign(socket, :counter, Blog.Statistics.fetch(title))}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
 end
