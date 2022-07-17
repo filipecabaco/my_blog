@@ -17,7 +17,7 @@ if config_env() == :prod do
 
   config :blog, BlogWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
-    check_origin: ["https://filipecabaco.com"],
+    check_origin: ["https://filipecabaco.com", "https://filipe-cabaco-blog.fly.dev"],
     http: [
       ip: {0, 0, 0, 0, 0, 0, 0, 0},
       port: port
