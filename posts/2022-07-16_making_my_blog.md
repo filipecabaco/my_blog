@@ -4,6 +4,8 @@ For years I've wanted to write down and share what I'm coding but always postpon
 
 In this post I'm going to do a quick dive on my approach to build this blog and detail some of the things I found out along the way.
 
+Do not forget that all of the code from this post and others is in this [repository](https://github.com/filipecabaco/my_blog)
+
 ### Starting the project
 
 As every person thinking about building their blog, we need to always rewrite and reinvent the whell 😅. So, to comply with that tradition, I've opted to use my framework of choice for the last couple of years: [Phoenix](https://www.phoenixframework.org/).

@@ -2,6 +2,8 @@
 
 Well that was quick... Github API warned me that I've spent all my Rate limiting due to the fact that I'm using their Public API without Authorization and well that is expected... To handle this problem I'm going to use a really basic solution: I will cache whatever information I want from their API and store it in memory and I will use only what Elixir has without extra dependencies to do so.
 
+Do not forget that all of the code from this post and others is in this [repository](https://github.com/filipecabaco/my_blog)
+
 ## Setting up my cache
 Since I need to deploy the application each time I'm posting new content it's not a problem to have no TTL functionality and let it live for as long as it wants.
 
