@@ -1,5 +1,6 @@
 <ul>
   <%= for post <- @posts do %>
-    <li><%= live_redirect(post.label, to: Routes.post_show_path(@socket, :show, post.title)) %></li>
+    <% opts = if @branch, do: [branch: @branch], else: [] %>
+    <li><%= live_redirect(post.label, to: Routes.post_show_path(@socket, :show, post.title, opts)) %></li>
   <% end %>
 </ul>

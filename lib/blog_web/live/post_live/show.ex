@@ -10,8 +10,9 @@ defmodule BlogWeb.PostLive.Show do
   end
 
   @impl true
-  def handle_params(%{"title" => title}, _, socket) do
-    post = Posts.get_post!(title)
+  def handle_params(%{"title" => title} = params, _, socket) do
+    branch = Map.get(params, "branch")
+    post = Posts.get_post(title, branch)
     description = Posts.description(post)
 
     {:noreply,
