@@ -9,10 +9,7 @@ defmodule BlogWeb.Components.Dashboard do
     metrics =
       Posts.list_post()
       |> Enum.map(&String.replace(&1, ".md", ""))
-      |> Enum.map(fn title ->
-        [_, label] = Regex.run(~r/_(.*)/, title)
-        %{x: label, y: Statistics.fetch(title)}
-      end)
+      |> Enum.map(fn title -> %{x: title, y: Statistics.fetch(title)} end)
 
     spec =
       VegaLite.new(title: "Visits", width: :container, height: :container, padding: 5)
@@ -20,7 +17,6 @@ defmodule BlogWeb.Components.Dashboard do
       |> VegaLite.mark(:bar, color: "#98EED5")
       |> VegaLite.encode_field(:x, "x", type: :nominal, title: "Title")
       |> VegaLite.encode_field(:y, "y", type: :quantitative, title: "Views")
-      # |> VegaLite.encode_field(:color, "color", value: "#98EED5")
       |> VegaLite.to_spec()
 
     {:ok, push_event(socket, "draw", %{"spec" => spec})}
