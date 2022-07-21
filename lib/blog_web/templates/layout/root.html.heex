@@ -6,17 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content={csrf_token_value()} />
     <%= if @conn && Map.get(@conn.assigns, :title) do %>
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:site" content="@filipecabaco" />
-    <meta name="twitter:creator" content="@filipecabaco" />
-    <meta property="og:title" content={@page_title} />
-    <meta property="og:description" content={@description} />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content={BlogWeb.Endpoint.url() <> Routes.post_show_path(@conn, :show, @title)} />
-    <meta property="og:image" content={BlogWeb.Endpoint.url() <> Routes.static_path(@conn, "/images/logo.png")} />
-    <meta property="og:image:width" content="128"/>
-    <meta property="og:image:heigth" content="128"/>
-    <meta property="og:site_name" content="Filipe Cabaco Blog" />
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:site" content="@filipecabaco" />
+      <meta name="twitter:creator" content="@filipecabaco" />
+      <meta property="og:title" content={@page_title} />
+      <meta property="og:description" content={@description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={BlogWeb.Endpoint.url() <> Routes.post_show_path(@conn, :show, @title)} />
+      <meta property="og:image" content={BlogWeb.Endpoint.url() <> Routes.static_path(@conn, "/images/logo.png")} />
+      <meta property="og:image:width" content="128" />
+      <meta property="og:image:heigth" content="128" />
+      <meta property="og:site_name" content="Filipe Cabaco Blog" />
     <% end %>
     <%= live_title_tag(assigns[:page_title] || "", prefix: "Filipe Cabaco Blog - ") %>
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/assets/app.css")} />
@@ -26,7 +26,10 @@
   <body>
     <header>
       <section class="container">
-        <div>Filipe Cabaco Blog</div>
+        <nav>
+          <div>Filipe Cabaco Blog</div>
+          <%= link("Open Dashboard", to: Routes.open_dashboard_index_path(@conn, :index)) %>
+        </nav>
         <a href={Routes.post_index_path(@conn, :index)}>
           <img src={Routes.static_path(@conn, "/images/logo.svg")} class="logo" />
         </a>
