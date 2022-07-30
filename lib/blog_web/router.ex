@@ -19,6 +19,7 @@ defmodule BlogWeb.Router do
     live("/", PostLive.Index, :index)
     live("/post/:title", PostLive.Show, :show)
     live("/open_dashboard", OpenDashboardLive.Index, :index)
+    get("/atom", FeedController, :index)
   end
 
   # Other scopes may use custom stacks.

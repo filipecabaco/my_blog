@@ -8,7 +8,7 @@ defmodule Blog.Statistics do
     :ok = File.mkdir_p(path)
     {:ok, :statistics} = :dets.open_file(:statistics, [{:file, to_charlist("#{path}statistics")}])
 
-    Enum.each(Posts.list_post(), fn title ->
+    Enum.each(Posts.list_post(nil), fn title ->
       key = title |> String.replace(".md", "") |> to_charlist()
       if :dets.lookup(:statistics, key) == [], do: :dets.insert_new(:statistics, {key, 0})
     end)

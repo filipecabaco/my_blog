@@ -5,6 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content={csrf_token_value()} />
+    <link href="atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
+
     <%= if @conn && Map.get(@conn.assigns, :title) do %>
       <meta name="twitter:card" content="summary" />
       <meta name="twitter:site" content="@filipecabaco" />

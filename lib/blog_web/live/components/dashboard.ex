@@ -7,7 +7,7 @@ defmodule BlogWeb.Components.Dashboard do
   @impl true
   def update(_, socket) do
     metrics =
-      Posts.list_post()
+      Posts.list_post(nil)
       |> Enum.map(&String.replace(&1, ".md", ""))
       |> Enum.map(fn title -> %{x: title, y: Statistics.fetch(title)} end)
 

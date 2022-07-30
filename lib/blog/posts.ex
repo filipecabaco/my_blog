@@ -3,8 +3,6 @@ defmodule Blog.Posts do
   @url "https://api.github.com/repos/filipecabaco/my_blog/contents/posts"
   def start_link(_), do: Agent.start_link(fn -> %{titles: [], posts: %{}} end, name: __MODULE__)
 
-  def list_post(), do: list_post(nil)
-
   def list_post(nil) do
     Agent.get_and_update(__MODULE__, fn
       %{titles: []} = state ->
@@ -33,9 +31,14 @@ defmodule Blog.Posts do
 
   def get_post(title, branch), do: fetch_post(title, branch)
 
+  def title(post) do
+    [_, title] = Regex.run(~r/#(.*)/, post)
+    String.trim(title)
+  end
+
   def description(post) do
     [_, description] = Regex.run(~r/# .*\n\n(.*)/, post)
-    description
+    String.trim(description)
   end
 
   def parse(post) do
@@ -52,9 +55,7 @@ defmodule Blog.Posts do
 
   defp fetch_post(title, branch) do
     "#{@url}/#{title}.md"
-    |> IO.inspect()
     |> Req.get!(headers: headers(), params: [ref: branch])
-    |> IO.inspect()
     |> then(& &1.body["download_url"])
     |> Req.get!(headers: headers(), params: [ref: branch])
     |> then(& &1.body)
