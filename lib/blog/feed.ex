@@ -55,7 +55,8 @@ defmodule Blog.Feed do
        {:id, %{}, link},
        {:title, %{}, title},
        {:updated, %{}, date},
-       {:content, %{}, description}
+       {:content, %{}, description},
+       {:link, %{href: link}, nil}
      ]}
   end
 end
