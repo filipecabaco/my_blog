@@ -78,7 +78,8 @@ After that we can tackle each element individually where we will run all posts, 
        {:id, %{}, link},
        {:title, %{}, title},
        {:updated, %{}, date},
-       {:content, %{}, description}
+       {:content, %{}, description},
+       {:link, %{href: link}, nil}
      ]}
   end
 ```
