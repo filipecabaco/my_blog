@@ -1,6 +1,6 @@
 # Atom feeding and xmerl
 
-Any good blog needs to support some sort of feed support so we will build our own using a neat moodule from Erlang called xmerl. We will learn a bit about Erlang interoperability and also see how we can create XML content without adding extra dependencies to our code.
+Any good blog needs to support some sort of feed standard so we will build our own using a neat moodule from Erlang called xmerl. We will learn a bit about Erlang interoperability and also see how we can create XML content without adding extra dependencies to our code.
 
 ## Atoms for XML
 
