@@ -4,10 +4,9 @@ defmodule BlogWeb.PostLive.Index do
   alias Blog.Posts
 
   @impl true
-  def mount(params, _session, socket) do
+  def mount(params, _, socket) do
     branch = Map.get(params, "branch")
-    socket = socket |> assign(:posts, list_post(branch)) |> assign(:branch, branch)
-    {:ok, socket}
+    {:ok, assign(socket, %{posts: list_post(branch), branch: branch})}
   end
 
   defp list_post(branch) do
