@@ -8,7 +8,7 @@ defmodule BlogWeb.Components.ReadTag do
 
   @impl true
   def render(%{read_tag: read_tag, read_tag_id: read_tag_id, self_id: self_id} = assigns) when not is_nil(read_tag) do
-    style = "margin-left: -3rem; width: 3rem; background-color: #{read_tag.color}; border-top-right-radius: 1rem 40%; border-bottom-right-radius: 1rem 40%;"
+    style = "margin-left: -10vw; width: 2rem; background-color: #{read_tag.color}; border-top-right-radius: 1rem 40%; border-bottom-right-radius: 1rem 40%;"
 
     style =
       if(self_id == read_tag_id) do
