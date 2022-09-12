@@ -1,19 +1,18 @@
 defmodule Blog.ReadTag.Supervisor do
   use DynamicSupervisor
   alias Blog.ReadTag
-  @impl true
 
   def init(_), do: DynamicSupervisor.init(strategy: :one_for_one)
   def start_link(_), do: DynamicSupervisor.start_link(__MODULE__, [], name: __MODULE__)
 
   def start(socket, title) do
-    DynamicSupervisor.start_child(__MODULE__, {ReadTag, %{name: {:global, socket.id}, socket: socket}})
+    DynamicSupervisor.start_child(__MODULE__, {ReadTag, %{name: {:global, socket.id}, socket: socket, title: title}})
     BlogWeb.Endpoint.broadcast!("read_tag", "new_tag", %{id: socket.id, title: title})
   end
 
   def terminate(id), do: DynamicSupervisor.terminate_child(__MODULE__, :global.whereis_name(id))
 
-  def get_socket(id), do: GenServer.call(:global.whereis_name(id), :get_socket)
+  def get_socket(id), do: GenServer.call(:global.whereis_name(id), :get_state).socket
 
   def get_state(id) do
     pid = :global.whereis_name(id)

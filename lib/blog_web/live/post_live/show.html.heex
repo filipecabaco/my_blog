@@ -1,5 +1,5 @@
 <%= for read_tag <- @read_tags do %>
-  <.live_component module={BlogWeb.Components.ReadTag} id={"read_tag_#{read_tag.socket.id}"} title={@title} read_tag_id={read_tag.socket.id} />
+  <.live_component module={BlogWeb.Components.ReadTag} id={"read_tag_#{read_tag.socket.id}"} title={@title} owner_id={read_tag.socket.id} />
 <% end %>
 <%= raw(@post) %>
 <span><%= live_redirect("Back", to: Routes.post_index_path(@socket, :index)) %></span>

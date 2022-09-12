@@ -6,10 +6,7 @@ defmodule BlogWeb.PostLive.Show do
 
   @impl true
   def mount(%{"title" => title}, _, socket) do
-    if connected?(socket) do
-      Supervisor.start(socket, title)
-      Supervisor.set_title(socket.id, title)
-    end
+    if connected?(socket), do: Supervisor.start(socket, title)
 
     BlogWeb.Endpoint.subscribe("show")
     BlogWeb.Endpoint.subscribe("read_tag")
