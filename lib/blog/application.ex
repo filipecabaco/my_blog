@@ -10,7 +10,9 @@ defmodule Blog.Application do
       {Phoenix.PubSub, name: Blog.PubSub},
       BlogWeb.Endpoint,
       Blog.Posts,
-      {Blog.Statistics, "/tmp/blog/"}
+      {Blog.Statistics, "/tmp/blog/"},
+      Blog.ReadTag.Supervisor,
+      Blog.ReadTag.Monitor
     ]
 
     opts = [strategy: :one_for_one, name: Blog.Supervisor]

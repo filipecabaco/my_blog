@@ -1,6 +1,8 @@
+<div style="display: flex; justify-content: center;">
 <ul>
   <%= for post <- @posts do %>
     <% opts = if @branch, do: [branch: @branch], else: [] %>
     <li><%= live_redirect(post.label, to: Routes.post_show_path(@socket, :show, post.title, opts)) %></li>
   <% end %>
 </ul>
+</div>

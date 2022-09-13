@@ -22,6 +22,7 @@ body {
   font-weight: 300;
   letter-spacing: 0.01em;
   line-height: 1.6;
+  margin: 0;
 }
 blockquote {
   border-left: 0.3rem solid #d1d1d1;
@@ -266,10 +267,8 @@ input[type='radio'] {
 }
 .container {
   margin: 0 auto;
-  max-width: 112rem;
-  padding: 0 2rem;
   position: relative;
-  width: 100%;
+  width: 80vw;
 }
 .row {
   display: flex;
@@ -585,13 +584,6 @@ pre {
   padding: 1em;
 }
 
-.container {
-  margin: 0 auto;
-  max-width: 80rem;
-  padding: 0 2rem;
-  position: relative;
-  width: 100%;
-}
 select {
   width: auto;
 }

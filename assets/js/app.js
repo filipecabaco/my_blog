@@ -25,6 +25,7 @@ import 'phoenix_html'
 import { Socket } from 'phoenix'
 import { LiveSocket } from 'phoenix_live_view'
 import Dashboard from './hook/dashboard'
+import ReadTag from './hook/read_tag'
 import topbar from '../vendor/topbar'
 
 let csrfToken = document
@@ -32,7 +33,7 @@ let csrfToken = document
   .getAttribute('content')
 
 let params = { _csrf_token: csrfToken }
-let hooks = { Dashboard }
+let hooks = { Dashboard, ReadTag }
 let liveSocket = new LiveSocket('/live', Socket, { params, hooks })
 
 // Show progress bar on live navigation and form submits
