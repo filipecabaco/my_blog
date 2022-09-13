@@ -1,6 +1,6 @@
 # Realtime Updates with LiveView
 
-One of the main advantages of LiveView over other implementations is the fact that realtime operations become a state update. In this post I'm going to detail how you can implement a realtime feature by adding a anonymous "ghost" to track where other users are when reading in this blog.
+One of the main advantages of LiveView over other implementations is the fact that realtime operations become a state update. In this post I'm going to detail how you can implement a realtime feature by adding a anonymous "ghost" to track where other users are when reading in this blog. We will tackle process creation, socket connection and Elixir <=> JS interoperability so get ready for a really long post.
 
 Do not forget that all of the code from this post and others is in this [repository](https://github.com/filipecabaco/my_blog).
 
@@ -8,28 +8,26 @@ Do not forget that all of the code from this post and others is in this [reposit
 
 The idea will be to track where each user is in the page vertically by reacting to JS events, sending them to Elixir and update all connected users so we require a couple of moving pieces to achieve it:
 
-- Store where each user is
+- Store data for each connected socket
 - React upon user entering and exiting
-- Handle JS events by updating state on the user and all listeners
+- Handle JS events by updating state on all connected users
 
-We will tackle this bottom up since it will be tricky the other way around.
+We will tackle this bottom up so our story is a bit clearer.
 
-## Storing where each user is
+## Storing user data
 
-Usually in other languages this would be some sort of persistency (in-memory or with an external system) that would guarantee atomic operations on the state. Fortunately we're in the Beam land where we can have that in our best friends: processes. This means that we will have one process per connected LiveView socket which will be updated as new events are received.
+Usually in other stacks this would be some sort of persistency (in-memory or with an external system) that would guarantee atomic operations on the state which would increase complexity. Fortunately we're in Beam land where we can have that by using one of our best friends: Processes. This means that we will have one process per connected LiveView socket which will be updated as new events are received.
 
 ### GenServer for one, GenServer for all!
 
 #### One is the loneliest number
 
-GenServers are our abstraction of choice to build our persistency layer so we will create a simple GenServer with the state we require which:
+GenServers will be our abstraction of choice to build our persistency layer so we will create a simple GenServer with the state we require which:
 
-- the connected socket
-- the title of the post
-- a random color
-- the initial position of 0 in the Y axis
-
-We will also notice that we receive the name that will attributed to the running process. That detail will become clearer in a bit.
+- the socket
+- title of the post
+- random color
+- the initial position set to 0
 
 ```elixir
 defmodule Blog.ReadTag do
@@ -53,6 +51,8 @@ defmodule Blog.ReadTag do
 end
 ```
 
+Notice that we also will receive the name that will attributed to the running process. That detail will become clearer in a bit.
+
 And now with some simple commands we are able to start our child process and access it state:
 
 ```elixir
@@ -62,9 +62,9 @@ iex(2)> GenServer.call(Blog.ReadTag, :get_state)
 %{color: "rgba(188, 35, 5, 0.5)", position: 0, socket: nil, title: nil}
 ```
 
-So now we are able to store one user which is progress but how can we have one process per connected user? Do we create a pool of empty processes preemptively and set the state as needed? Do we have all the data within one process with a list or a map? Or do we use the Beam superpowers?
+We are now able to store one user which is progress but how can we have one process per connected user? Do we create a pool of empty processes preemptively and set the state as needed? Do we have all the data within one process with a list or a map? Or do we use the Beam superpowers?
 
-I think you know the awnser
+I think you know the answer.
 
 #### The power of multiplication
 
@@ -85,9 +85,7 @@ defmodule Blog.Application do
 end
 ```
 
-But we want to create our child processes dynamically based on our needs and, as usual, Elixir offers just the right tool for the job called [Dynamic Supervisor](https://hexdocs.pm/elixir/1.14/DynamicSupervisor.html) which are able to receive a child specification (aka a GenServer) and handle their lifecycle.
-
-Lets implement ours:
+But we want to create our child processes dynamically based on our needs and, as usual, Elixir offers just the right tool for the job. [Dynamic Supervisor](https://hexdocs.pm/elixir/1.14/DynamicSupervisor.html) are Supervisors that let you receive a child specification (aka a GenServer) and handle their lifecycle fully in a dynamic way.
 
 ```elixir
 defmodule Blog.ReadTag.Supervisor do
@@ -102,7 +100,7 @@ defmodule Blog.ReadTag.Supervisor do
 end
 ```
 
-With this code we can create multiple processes, one per socket:
+With this code we can create multiple processes, one per "simulated socket":
 
 ```elixir
 iex(1)> Enum.each(1..5, &Blog.ReadTag.Supervisor.start(%{id: &1}, "test"))
@@ -111,11 +109,11 @@ iex(1)> Enum.each(1..5, &Blog.ReadTag.Supervisor.start(%{id: &1}, "test"))
 
 ![Supervision tree after starting 5 child processes](/images/img9.png)
 
-**Note:** Now there's is a hugely important detail we should be aware of, we took a shortcut by using the [:global](https://www.erlang.org/doc/man/global.html) name registry. We will tackle this at a later stage but be aware that you could have your own Registry which would be a better way of doing this since you would constraint names to your specific domain.
+**Note:** Now there's is a hugely important detail we should be aware of, we took a shortcut by using the [:global](https://www.erlang.org/doc/man/global.html) name registry. We could have created our own [Registry](https://hexdocs.pm/elixir/1.14/Registry.html) which would be a better approach to ensure we have separate names for separate contexts.
 
-In our use case we're going to set the name of the process with the id of the socket by using the process name of `{:global, socket.id}`
+In our use case we're going to set the name of the process with the id of the socket by using the process name of `{:global, socket.id}` and we can find our processes by doing `:global_whereis_name(name)`.
 
-Lets add a couple of helper methods:
+Lets add a couple of helper methods so we can talk with our child processes in a more streamlined way based on their socket IDs and post title:
 
 ```elixir
 defmodule Blog.ReadTag.Supervisor do
@@ -182,21 +180,22 @@ defmodule BlogWeb.PostLive.Show do
 end
 ```
 
-And that is it, we now have state per connected socket but what happens on disconnect? What if a user closes the tab or his browser crashes?
+That is it, we now have state per connected socket but what happens on disconnect? What if a user closes the tab or his browser crashes?
 
 We need to have a way to control LiveView connections to ensure we kill stale processes.
 
 #### The Terminator
 
-We need to find a way to control what processes to keep alive and which ones to kill and fortunately LiveView has another great trick up its sleave. Each socket connection is a process by itself and you can access the PID of the connection. If a connection dies, the process will also die and we can use that to our advantage:
+How can we check what processes to keep alive and which ones to kill? Fortunately LiveView has another great trick up its sleave. Each socket connection is a process by itself and you can access the PID of said connection. If a connection dies, the process will also die and we can use that to our advantage:
 
 ```elixir
 %Phoenix.LiveView.Socket{
   root_pid: pid(), # This is our friend that lives and dies based on the connection status
 }
+Process.alive?(root_pid) # This determines if the socket is still connected or not
 ```
 
-So lets create our Terminator process, a simple process that will check out registry (the :global registry for now) and see what is the status of the connection from our sockets:
+So lets create our Terminator GenServer, a simple process that will check our `:global` registry and see what is the status of each connection from our sockets:
 
 ```elixir
 defmodule Blog.ReadTag.Monitor do
@@ -224,17 +223,17 @@ defmodule Blog.ReadTag.Monitor do
 end
 ```
 
-So this creates a "scheduled" task that runs every 100ms to check if the `root_pid` of all existing sockets are alive or dead. If dead, we request our supervisor to kill it's child 😱.
+This creates a "scheduled" task that runs every 100ms to check if the `root_pid` of all existing sockets are alive or dead. If dead, we request our supervisor to kill it's child 😱.
 
-**Note:** There's a cool trick with this GenServer which is the return of `init/1`. By returning the tuple `{:continue, []}` we're informing the GenServer that after everything is properly started with the proccess we want to run some code (in our case we send a message to ourselves to start the cleanup process).
+**Note:** There's a cool trick with this GenServer which is the return of `init/1`. By returning the tuple `{:continue, []}` we're informing the GenServer that after everything is properly started with the proccess we want to run some code in our `handle_continue/2` function. In this scenario we're sending a message to ourselves to kickstart the cleanup scheduled process.
 
-And now we fully control the lifecycle from start => middle => end of life of our processes which are connected to our clients so lets now create our component that uses this state.
+And now we fully control the lifecycle from start => middle => end of life of our processes so lets move to our component that will use all of this information.
 
 ## The Ghost Tag
 
 ### Drawing Casper
 
-Lets first create our component so we can draw a simple html component based on :
+Lets first create our component so we can draw a simple html component based on the title and the read tag information extracted from a targetted process:
 
 ```elixir
 defmodule BlogWeb.Components.ReadTag do
@@ -264,7 +263,7 @@ end
 
 ```
 
-Then we check our parent view to assign the correct information (all our read tags per post) and draw our component:
+Then we check our parent view to assign the correct information (all our read tags per post title) and draw our component:
 
 ```elixir
 defmodule BlogWeb.PostLive.Show do
@@ -365,12 +364,14 @@ defmodule BlogWeb.PostLive.Show do
 end
 ```
 
-And that is it, whenever a user joins, the view is updated to add a new element and when disconnects the element will be removed:
+And that is it, whenever a user joins, the elements are updated to add or remove elements.
 ![Page elements updating on joining and leaving of a user](/images/img11.gif)
 
 ### Paranormal activity
 
-Time for the JS <=> Elixir interoperability! We need to send en event from JS to Elixir to update the position of our tag element and we need to react to an from Elixir to JS by adding an handle event callback. We will achieve this by creating a new hook:
+Time for the JS <=> Elixir interoperability! We need to send en event from JS to Elixir to update the position of our tag element and we need to react to an event from Elixir to JS by adding an handle event callback.
+
+We will achieve this by creating a new hook to be used only by this component:
 
 ```javascript
 const ReadTag = {
@@ -379,7 +380,7 @@ const ReadTag = {
     addEventListener('scroll', () => {
       scrolling = true
     })
-    // Modify position by changing the target element top position upon a received event from Elixir
+    // Receive event from Elixir and modify position of target element
     this.handleEvent('update_tag', (event) => {
       let tag = document.getElementById(event.id)
       if (tag) {
@@ -403,7 +404,7 @@ const ReadTag = {
 export default ReadTag
 ```
 
-Then we need to react to this event in our parent view by updating the state of the process for the connected socket and broadcasting to other users that there's a new state for our process:
+Then we need to send and handle this events in our parent view:
 
 ```elixir
 defmodule BlogWeb.PostLive.Show do
@@ -421,17 +422,20 @@ defmodule BlogWeb.PostLive.Show do
     {:noreply, push_event(socket, "update_tag", %{id: "read_tag_#{id}", position: position})}
   end
   # ...
+  # Receive event from JS on position update
   @impl true
   def handle_event("scroll_position", %{"position" => position, "title" => title}, socket) do
-    Supervisor.set_position(socket.id, position)
-    BlogWeb.Endpoint.broadcast!("read_tag", "position_update", %{id: socket.id, position: position, title: title})
+    Supervisor.set_position(socket.id, position) # Update our process state
+    BlogWeb.Endpoint.broadcast!("read_tag", "position_update", %{id: socket.id, position: position, title: title}) # Emit to PubSub a position update
     {:noreply, socket}
   end
 end
 ```
 
-And now our ghost walks in our page! Quite a long journey but we just achieved realtime communication with around 200 lines of code without an external system and using only Phoenix, LiveView and Elixir as dependencies.
+And now our ghosts walk in our page! Quite a long journey but we just achieved realtime communication with around 200 lines of code without an external system and using only Phoenix, LiveView and Elixir as dependencies.
 ![Read tags moving in our page](/images/img12.gif)
+
+Hope you enjoy it and that this post triggered your imagination on what LiveView is capable of.
 
 ## Conclusion
 
