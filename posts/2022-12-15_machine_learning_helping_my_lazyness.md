@@ -72,7 +72,7 @@ end
 
 And now we can run `iex -S mix` and try it out!
 ```elixir
-iex(1)> Blog.Lazy.generate("And that is it! Our blog post can now be automated and we can start our path to lazy writing. Next steps could be")         
+iex(1)> Blog.Lazy.generate("And that is it! Our blog post can now be automated and we can start our path to lazy writing. Next steps could be")
 ```
 
 > In bold is the generated text!

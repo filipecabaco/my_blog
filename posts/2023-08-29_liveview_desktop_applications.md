@@ -168,6 +168,8 @@ After you have everything installed, you can run the command `mix ex_tauri dev`.
 
 But with `mix ex_tauri dev` you will be able to see your application up and running in your Desktop and have your own local Grammarly.
 
+![Desktop application running with a Webview showing Liveview](/images/img14.gif)
+
 ## Web View vs Native
 
 Both approaches to the same problem are fine as long as you are aware of the limitations and, more importantly, have fun building stuff regardless of the approach 😁.
