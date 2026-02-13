@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content={csrf_token_value()} />
+    <link href="atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
+
+    <%= if assigns[:page_title] do %>
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:site" content="@filipecabaco" />
+      <meta name="twitter:creator" content="@filipecabaco" />
+      <meta property="og:title" content={@page_title} />
+      <meta property="og:description" content={@description} />
+      <meta property="og:type" content="website" />
+      <%= if assigns[:title] do %>
+        <meta property="og:url" content={BlogWeb.Endpoint.url() <> Routes.post_show_path(BlogWeb.Endpoint, :show, @title)} />
+      <% end %>
+      <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/logo.png"} />
+      <meta property="og:image:width" content="128" />
+      <meta property="og:image:heigth" content="128" />
+      <meta property="og:site_name" content="Filipe Cabaco Blog" />
+    <% end %>
+
+    <.live_title prefix="Filipe Cabaco Blog ">
+      <%= assigns[:page_title] || "" %>
+    </.live_title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
+  </head>
+  <body>
+    <header>
+      <section class="container">
+        <nav>
+          <div>Filipe Cabaco Blog</div>
+          <.link navigate={~p"/open_dashboard"}>Open Dashboard</.link>
+        </nav>
+        <a href="/">
+          <img src={~p"/images/logo.svg"} class="logo" />
+        </a>
+      </section>
+    </header>
+    {@inner_content}
+  </body>
+</html>

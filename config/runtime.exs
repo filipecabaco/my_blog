@@ -1,5 +1,30 @@
 import Config
 
+# Load .env file in development and test environments
+if config_env() in [:dev, :test] do
+  env_file = Path.expand(".env", File.cwd!())
+
+  if File.exists?(env_file) do
+    env_file
+    |> File.read!()
+    |> String.split("\n", trim: true)
+    |> Enum.reject(&String.starts_with?(&1, "#"))
+    |> Enum.each(fn line ->
+      case String.split(line, "=", parts: 2) do
+        [key, value] ->
+          key = String.trim(key)
+          value = String.trim(value)
+          System.put_env(key, value)
+
+        _ ->
+          :ok
+      end
+    end)
+  end
+end
+
+config :blog, :github_token, System.get_env("GITHUB_API_TOKEN") || System.get_env("GITHUB_TOKEN") || ""
+
 if System.get_env("PHX_SERVER") do
   config :blog, BlogWeb.Endpoint, server: true
 end
@@ -23,6 +48,4 @@ if config_env() == :prod do
       port: port
     ],
     secret_key_base: secret_key_base
-
-  config :blog, :github_token, System.get_env("GITHUB_API_TOKEN")
 end

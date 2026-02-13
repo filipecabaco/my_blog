@@ -15,8 +15,8 @@ config :blog, BlogWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "ibNwYPZUQ9zZv44CqQXtbP9fnlbAUzT+SxLkvMZq6D0YheqmaOk/37G2Z1SFOiFO",
   watchers: [
-    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    # Start the esbuild watcher by calling Esbuild.install_and_run(:blog, args)
+    esbuild: {Esbuild, :install_and_run, [:blog, ~w(--sourcemap=inline --watch)]}
   ]
 
 # ## SSL Support
@@ -47,10 +47,9 @@ config :blog, BlogWeb.Endpoint,
 config :blog, BlogWeb.Endpoint,
   live_reload: [
     patterns: [
-      ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
-      ~r"priv/gettext/.*(po)$",
-      ~r"lib/blog_web/(live|views)/.*(ex)$",
-      ~r"lib/blog_web/templates/.*(eex)$"
+      ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
+      ~r"lib/blog_web/(controllers|live|components)/.*(ex|heex)$",
+      ~r"lib/blog_web/templates/.*(heex)$"
     ]
   ]
 
@@ -63,3 +62,9 @@ config :phoenix, :stacktrace_depth, 20
 
 # Initialize plugs at runtime for faster development compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# Enable LiveView debug features in development
+config :phoenix_live_view,
+  debug_heex_annotations: true,
+  debug_attributes: true,
+  enable_expensive_runtime_checks: true

@@ -14,16 +14,13 @@ config :blog, BlogWeb.Endpoint,
   pubsub_server: Blog.PubSub,
   live_view: [signing_salt: "OfNHm0M8"]
 
-config :blog, :github_token, System.get_env("GITHUB_API_TOKEN")
-
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.14.29",
-  default: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+  blog: [
+    args: ~w(js/app.js --bundle --target=es2022 --outdir=../priv/static/assets --external:/fonts/* --external:/images/* --loader:.css=css),
     cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+    env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
   ]
 
 # Configures Elixir's Logger

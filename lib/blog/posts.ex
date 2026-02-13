@@ -46,23 +46,45 @@ defmodule Blog.Posts do
   end
 
   defp fetch_titles(branch) do
-    @url
-    |> Req.get!(headers: headers(), params: [ref: branch])
-    |> then(& &1.body)
-    |> Enum.map(& &1["name"])
-    |> Enum.sort(:desc)
+    case Req.get(@url, headers: headers(), params: [ref: branch]) do
+      {:ok, %{body: body}} when is_list(body) ->
+        body |> Enum.map(& &1["name"]) |> Enum.sort(:desc)
+
+      {:ok, %{body: %{"message" => message, "status" => status}}} when status == 401 ->
+        IO.warn("GitHub API authentication failed: #{message}")
+        IO.inspect(Application.get_env(:blog, :github_token), label: "Token being used (first 10 chars)")
+        []
+
+      {:ok, %{body: body}} ->
+        IO.inspect(body, label: "Unexpected response format from GitHub API")
+        []
+
+      {:error, reason} ->
+        IO.warn("Failed to fetch titles from GitHub: #{inspect(reason)}")
+        []
+    end
   end
 
   defp fetch_post(title, branch) do
-    "#{@url}/#{title}.md"
-    |> Req.get!(headers: headers(), params: [ref: branch])
-    |> then(& &1.body["download_url"])
-    |> Req.get!(headers: headers(), params: [ref: branch])
-    |> then(& &1.body)
+    case Req.get("#{@url}/#{title}.md", headers: headers(), params: [ref: branch]) do
+      {:ok, %{body: %{"download_url" => download_url}}} ->
+        case Req.get(download_url, headers: headers(), params: [ref: branch]) do
+          {:ok, %{body: body}} ->
+            body
+
+          {:error, reason} ->
+            {:error, "Failed to fetch post content: #{inspect(reason)}"}
+        end
+
+      {:ok, %{body: %{"message" => message}}} ->
+        {:error, message}
+
+      {:error, reason} ->
+        {:error, "Failed to fetch post metadata: #{inspect(reason)}"}
+    end
   end
 
   defp headers(), do: [{"Authorization", "Bearer #{token()}"}]
 
-  # Going to use a token for good measure
-  defp token, do: Application.get_env(:blog, :github_token)
+  defp token, do: Application.get_env(:blog, :github_token, "")
 end

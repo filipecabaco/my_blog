@@ -67,4 +67,39 @@ defmodule BlogWeb.PostLive.Show do
     BlogWeb.Endpoint.broadcast!("read_tag", "position_update", %{id: socket.id, position: position, title: title})
     {:noreply, socket}
   end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <main class="container">
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:error} flash={@flash} />
+
+      <%= for read_tag <- @read_tags do %>
+        <.live_component module={BlogWeb.Components.ReadTag} id={"read_tag_#{read_tag.socket.id}"} title={@title} owner_id={read_tag.socket.id} />
+      <% end %>
+      {raw(@post)}
+      <span>
+        <.link navigate={~p"/"}>Back</.link>
+      </span>
+      <div>Total readers: {@counter}</div>
+    </main>
+    """
+  end
+
+  attr :kind, :atom, required: true
+  attr :flash, :map, required: true
+
+  defp flash(assigns) do
+    message = Phoenix.Flash.get(assigns.flash, assigns.kind)
+    assigns = assign(assigns, :message, message)
+
+    ~H"""
+    <%= if @message do %>
+      <p class={"alert alert-#{@kind}"} role="alert" phx-click="lv:clear-flash" phx-value-key={@kind}>
+        {@message}
+      </p>
+    <% end %>
+    """
+  end
 end

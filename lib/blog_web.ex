@@ -19,33 +19,26 @@ defmodule BlogWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: BlogWeb
+      use Phoenix.Controller,
+        formats: [atom: BlogWeb.FeedView, html: BlogWeb.ErrorView, json: BlogWeb.ErrorView],
+        root_layout: false
 
       import Plug.Conn
-      import BlogWeb.Gettext
       alias BlogWeb.Router.Helpers, as: Routes
     end
   end
 
   def view do
     quote do
-      use Phoenix.View,
-        root: "lib/blog_web/templates",
-        namespace: BlogWeb
+      use Phoenix.Component
 
-      # Import convenience functions from controllers
-      import Phoenix.Controller,
-        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
-
-      # Include shared imports and aliases for views
       unquote(view_helpers())
     end
   end
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
-        layout: {BlogWeb.LayoutView, "live.html"}
+      use Phoenix.LiveView
 
       unquote(view_helpers())
     end
@@ -80,26 +73,27 @@ defmodule BlogWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import BlogWeb.Gettext
     end
   end
 
   defp view_helpers do
     quote do
-      # Use all HTML functionality (forms, tags, etc)
-      use Phoenix.HTML
-
-      # Import LiveView and .heex helpers (live_render, live_patch, <.form>, etc)
+      import Phoenix.HTML
+      import Phoenix.HTML.Form
+      use PhoenixHTMLHelpers
       import Phoenix.LiveView.Helpers
 
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
+      # Import verified routes for ~p
+      use Phoenix.VerifiedRoutes,
+        endpoint: BlogWeb.Endpoint,
+        router: BlogWeb.Router,
+        statics: BlogWeb.static_paths()
 
-      import BlogWeb.ErrorHelpers
-      import BlogWeb.Gettext
       alias BlogWeb.Router.Helpers, as: Routes
     end
   end
+
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 
   @doc """
   When used, dispatch to the appropriate controller/view/etc.
