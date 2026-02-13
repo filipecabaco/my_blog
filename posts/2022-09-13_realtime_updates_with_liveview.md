@@ -1,4 +1,5 @@
 # Realtime Updates with LiveView
+tags: elixir, phoenix, liveview, javascript
 
 One of the main advantages of LiveView over other implementations is the fact that realtime operations become a state update. In this post I'm going to detail how you can implement a realtime feature by adding a anonymous "ghost" to track where other users are when reading in this blog. We will tackle process creation, socket connection and Elixir <=> JS interoperability so get ready for a really long post.
 

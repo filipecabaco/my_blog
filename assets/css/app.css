@@ -141,3 +141,17 @@
     opacity: 0;
   }
 }
+
+.tag-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 4px;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.post-tags {
+  margin-bottom: 1rem;
+}

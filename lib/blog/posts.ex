@@ -1,80 +1,51 @@
 defmodule Blog.Posts do
-  @moduledoc """
-  Manages blog posts fetched from GitHub with ETS-based caching.
-
-  Posts are cached in memory using ETS for better reliability and performance.
-  The cache survives process crashes and can be shared across the application.
-  """
+  use GenServer
   require Logger
 
   @url "https://api.github.com/repos/filipecabaco/my_blog/contents/posts"
   @table __MODULE__
+  @ttl :timer.minutes(30)
 
-  def child_spec(_opts) do
-    %{
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, [[]]},
-      type: :worker,
-      restart: :permanent
-    }
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def start_link(_opts) do
+  @impl true
+  def init(_opts) do
     :ets.new(@table, [:named_table, :set, :public, read_concurrency: true])
-    :ignore
+    {:ok, %{}}
   end
 
-  @doc """
-  Lists all post filenames from GitHub.
-
-  ## Parameters
-    - `nil` - Uses cached titles if available, otherwise fetches from master branch
-    - `branch` - Fetches titles directly from the specified branch
-
-  ## Returns
-    - List of post filenames (strings) sorted in descending order
-  """
   @spec list_post(String.t() | nil) :: [String.t()]
   def list_post(nil) do
-    case :ets.lookup(@table, :titles) do
-      [{:titles, titles}] ->
+    case lookup(:titles) do
+      {:ok, titles} ->
         titles
 
-      [] ->
+      :miss ->
         titles = fetch_titles("master")
-        :ets.insert(@table, {:titles, titles})
+        insert(:titles, titles)
         titles
     end
   end
 
   def list_post(branch), do: fetch_titles(branch)
 
-  @doc """
-  Retrieves a post's content from GitHub.
-
-  ## Parameters
-    - `title` - The post filename (without .md extension)
-    - `branch` - Optional branch name (defaults to nil for master/cached version)
-
-  ## Returns
-    - Post content as string on success
-    - `{:error, reason}` tuple on failure
-  """
   @spec get_post(String.t(), String.t() | nil) :: String.t() | {:error, String.t()}
   def get_post(title, branch \\ nil)
 
   def get_post(title, nil) do
-    case :ets.lookup(@table, {:post, title}) do
-      [{_, post}] ->
+    case lookup({:post, title}) do
+      {:ok, post} ->
         post
 
-      [] ->
+      :miss ->
         case fetch_post(title, "master") do
           {:error, _} = error ->
             error
 
           post ->
-            :ets.insert(@table, {{:post, title}, post})
+            insert({:post, title}, post)
             post
         end
     end
@@ -82,15 +53,11 @@ defmodule Blog.Posts do
 
   def get_post(title, branch), do: fetch_post(title, branch)
 
-  @doc """
-  Extracts the title from a markdown post.
+  def invalidate_cache do
+    :ets.delete_all_objects(@table)
+    :ok
+  end
 
-  ## Parameters
-    - `post` - The markdown content as a string
-
-  ## Returns
-    - Extracted title as string, or empty string if not found
-  """
   @spec title(String.t()) :: String.t()
   def title(post) do
     case Regex.run(~r/#(.*)/, post) do
@@ -99,33 +66,28 @@ defmodule Blog.Posts do
     end
   end
 
-  @doc """
-  Extracts the description from a markdown post.
+  @spec tags(String.t()) :: [String.t()]
+  def tags(post) do
+    case Regex.run(~r/^tags:\s*(.+)$/m, post) do
+      [_, tags_string] ->
+        tags_string
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
 
-  ## Parameters
-    - `post` - The markdown content as a string
+      nil ->
+        []
+    end
+  end
 
-  ## Returns
-    - Extracted description as string, or empty string if not found
-  """
   @spec description(String.t()) :: String.t()
   def description(post) do
-    case Regex.run(~r/# .*\n\n(.*)/, post) do
+    case Regex.run(~r/# .*\n(?:tags:.*\n)?\n(.*)/, post) do
       [_, description] -> String.trim(description)
       nil -> ""
     end
   end
 
-  @doc """
-  Parses markdown content to HTML.
-
-  ## Parameters
-    - `post` - The markdown content as a string
-
-  ## Returns
-    - HTML string on success
-    - `{:error, reason}` on parse failure
-  """
   @spec parse(String.t()) :: String.t() | {:error, String.t()}
   def parse(post) do
     case Earmark.as_html(post) do
@@ -138,38 +100,48 @@ defmodule Blog.Posts do
     end
   end
 
-  # Private functions
+  defp lookup(key) do
+    case :ets.lookup(@table, key) do
+      [{^key, value, inserted_at}] ->
+        if System.monotonic_time(:millisecond) - inserted_at < @ttl,
+          do: {:ok, value},
+          else: :miss
 
-  @spec fetch_titles(String.t()) :: [String.t()]
+      _ ->
+        :miss
+    end
+  end
+
+  defp insert(key, value) do
+    :ets.insert(@table, {key, value, System.monotonic_time(:millisecond)})
+  end
+
   defp fetch_titles(branch) do
     with {:ok, %{body: body}} when is_list(body) <-
-           Req.get(@url, headers: headers(), params: [ref: branch]) do
+           req_get(@url, params: [ref: branch]) do
       body
       |> Enum.map(& &1["name"])
       |> Enum.sort(:desc)
     else
-      {:ok, %{body: %{"message" => message, "status" => 401}}} ->
+      {:ok, %{body: %{"message" => message}}} ->
         Logger.warning("GitHub API authentication failed: #{message}")
-        token = Application.get_env(:blog, :github_token, "")
-        Logger.debug("Token being used (first 10 chars): #{String.slice(token, 0, 10)}")
         []
 
       {:ok, %{body: body}} ->
-        Logger.warning("Unexpected response format from GitHub API: #{inspect(body)}")
+        Logger.warning("Unexpected GitHub API response: #{inspect(body)}")
         []
 
       {:error, reason} ->
-        Logger.warning("Failed to fetch titles from GitHub: #{inspect(reason)}")
+        Logger.warning("Failed to fetch titles: #{inspect(reason)}")
         []
     end
   end
 
-  @spec fetch_post(String.t(), String.t()) :: String.t() | {:error, String.t()}
   defp fetch_post(title, branch) do
     with {:ok, %{body: %{"download_url" => download_url}}} <-
-           Req.get("#{@url}/#{title}.md", headers: headers(), params: [ref: branch]),
+           req_get("#{@url}/#{title}.md", params: [ref: branch]),
          {:ok, %{body: body}} when is_binary(body) <-
-           Req.get(download_url, headers: headers()) do
+           req_get(download_url) do
       body
     else
       {:ok, %{body: %{"message" => message}}} ->
@@ -182,9 +154,13 @@ defmodule Blog.Posts do
     end
   end
 
-  @spec headers() :: [{String.t(), String.t()}]
-  defp headers, do: [{"Authorization", "Bearer #{token()}"}]
+  defp req_get(url, opts \\ []) do
+    [url: url, headers: [{"Authorization", "Bearer #{token()}"}]]
+    |> Keyword.merge(opts)
+    |> Keyword.merge(Application.get_env(:blog, :req_options, []))
+    |> Req.new()
+    |> Req.get()
+  end
 
-  @spec token() :: String.t()
   defp token, do: Application.get_env(:blog, :github_token, "")
 end

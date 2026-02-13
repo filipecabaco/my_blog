@@ -48,6 +48,9 @@ defmodule Blog.Feed do
       title = Posts.title(post)
       link = "https://filipecabaco.com/post/#{name}"
 
+      tags = Posts.tags(post)
+      categories = Enum.map(tags, fn tag -> {:category, %{term: tag}, nil} end)
+
       {:entry, %{},
        [
          {:id, %{}, link},
@@ -55,7 +58,7 @@ defmodule Blog.Feed do
          {:updated, %{}, date},
          {:content, %{}, description},
          {:link, %{href: link}, nil}
-       ]}
+       ] ++ categories}
     else
       {:error, reason} ->
         Logger.warning("Skipping feed entry for #{name}: #{reason}")

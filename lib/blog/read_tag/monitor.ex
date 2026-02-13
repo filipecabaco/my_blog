@@ -24,7 +24,7 @@ defmodule Blog.ReadTag.Monitor do
       end
     end)
 
-    Process.send_after(self(), :clean, 100)
+    Process.send_after(self(), :clean, :timer.seconds(5))
     {:noreply, state}
   end
 end

@@ -1,18 +1,12 @@
 defmodule Blog.Statistics do
   use GenServer
-  alias Blog.Posts
+
   def start_link(path), do: GenServer.start_link(__MODULE__, path, name: __MODULE__)
 
   @impl true
   def init(path) do
     :ok = File.mkdir_p(path)
     {:ok, :statistics} = :dets.open_file(:statistics, [{:file, to_charlist("#{path}statistics")}])
-
-    Enum.each(Posts.list_post(nil), fn title ->
-      key = title |> String.replace(".md", "") |> to_charlist()
-      if :dets.lookup(:statistics, key) == [], do: :dets.insert_new(:statistics, {key, 0})
-    end)
-
     :telemetry.attach(__MODULE__, [:blog, :visit], &Blog.Statistics.handle_event/4, nil)
     {:ok, nil}
   end

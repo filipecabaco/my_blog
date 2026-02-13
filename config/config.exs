@@ -9,6 +9,7 @@ import Config
 
 # Configures the endpoint
 config :blog, BlogWeb.Endpoint,
+  adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
   render_errors: [view: BlogWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Blog.PubSub,

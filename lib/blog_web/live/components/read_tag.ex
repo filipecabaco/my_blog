@@ -30,7 +30,7 @@ defmodule BlogWeb.Components.ReadTag do
   def render(assigns) do
     ~H"""
     <div style={@style} id={@id} phx-hook={@read_tag && "ReadTag"} title={@title}>
-      <%= if @read_tag, do: raw("&nbsp;") %>
+      {if @read_tag, do: raw("&nbsp;")}
     </div>
     """
   end

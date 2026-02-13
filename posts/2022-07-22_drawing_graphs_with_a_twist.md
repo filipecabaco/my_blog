@@ -1,4 +1,5 @@
 # Drawing Graphs With a Twist
+tags: elixir, vega-lite
 
 With our statistics ready to be consumed, we should be able to share them with everyone. To do so we'll use Vegalite and update the graphic information dynamically as new people join. A mix of Javascript and Elixir that will make some really cool magic.
 

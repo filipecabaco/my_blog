@@ -35,7 +35,6 @@
 - [x] Added `with` statements for chained operations in `fetch_titles/1` and `fetch_post/2`
 - [x] Added `@spec` typespecs to all public and private functions
 - [x] Replaced `IO.warn/1` and `IO.inspect/2` with `Logger`
-- [x] Added `child_spec/1` for supervisor compatibility
 
 ### Feed Module
 - [x] Added error handling for failed post fetches (`with` + nil rejection)
@@ -56,33 +55,36 @@
 - [x] Fixed Statistics telemetry handler leak (`detach` in `terminate`)
 - [x] Cleaned up `BlogWeb` moduledoc
 
----
+## ✅ Phase 4 - Testing & Infrastructure (Complete)
+
+- [x] Configured test.exs (logger level, test github token, plug_init_mode)
+- [x] Created test_helper.exs and ConnCase support module
+- [x] Added Blog.Posts unit tests (title/1, description/1, parse/1) - 9 tests
+- [x] Added Blog.Feed tests (build/0 XML output, metadata) - 2 tests
+- [x] Added LiveView tests for Index and Show - 3 tests
+- [x] Switched from Cowboy to Bandit (~> 1.6) with adapter config
+
+## ✅ Phase 5 - Improvements (Complete)
+
+- [x] Posts module: converted to proper GenServer with 5-minute cache TTL
+- [x] Posts module: pluggable HTTP via `:req_options` config for testability
+- [x] Added integration tests with Req.Test for GitHub API (8 tests)
+- [x] Statistics: removed eager `list_post` call from init (lazy counter creation)
+- [x] ReadTag Monitor: reduced polling from 100ms to 5 seconds
+- [x] Fixed HEEx formatting (`<%= if %>` → `{if}`)
+- [x] Added GitHub Actions CI pipeline (compile, format, test)
 
 ## Current Status
 
 **Compilation: 0 warnings, 0 errors**
+**Formatting: clean**
+**Tests: 26 passing, 0 failures**
 
 ---
 
 ## 📋 Remaining (Future Work)
 
-### Testing
-- [ ] Configure test.exs
-- [ ] Add Blog.Posts unit tests (title/1, description/1, parse/1)
-- [ ] Add integration tests with Bypass for GitHub API mocking
-- [ ] Add LiveView tests for Index and Show
-
-### Performance
-- [ ] Add telemetry metrics for GitHub API calls
-- [ ] Cache TTL support (entries never expire currently)
-- [ ] Monitor cache hit rates
-
 ### Features
 - [ ] Add search functionality
 - [ ] Add tags/categories
-- [ ] RSS feed improvements
 - [ ] Dark mode
-
-### Developer Experience
-- [ ] Add CI/CD pipeline
-- [ ] Add code coverage reporting

@@ -43,7 +43,7 @@ defmodule Blog.MixProject do
       {:telemetry_metrics, "~> 1.1"},
       {:telemetry_poller, "~> 1.1"},
       {:jason, "~> 1.4"},
-      {:plug_cowboy, "~> 2.8"},
+      {:bandit, "~> 1.6"},
       {:earmark, "~> 1.4"},
       {:req, "~> 0.5"},
       {:vega_lite, "~> 0.1"}

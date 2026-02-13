@@ -25,6 +25,9 @@ defmodule BlogWeb.PostLive.Index do
             <% path = if @branch, do: ~p"/post/#{post.title}?branch=#{@branch}", else: ~p"/post/#{post.title}" %>
             <li>
               <.link navigate={path}>{post.label}</.link>
+              <%= for tag <- post.tags do %>
+                <span class="tag-pill">{tag}</span>
+              <% end %>
             </li>
           <% end %>
         </ul>
@@ -36,6 +39,14 @@ defmodule BlogWeb.PostLive.Index do
   defp list_post(branch) do
     Posts.list_post(branch)
     |> Enum.map(&String.replace(&1, ".md", ""))
-    |> Enum.map(&%{title: &1, label: Phoenix.Naming.humanize(&1)})
+    |> Enum.map(fn title ->
+      tags =
+        case Posts.get_post(title, branch) do
+          content when is_binary(content) -> Posts.tags(content)
+          _ -> []
+        end
+
+      %{title: title, label: Phoenix.Naming.humanize(title), tags: tags}
+    end)
   end
 end

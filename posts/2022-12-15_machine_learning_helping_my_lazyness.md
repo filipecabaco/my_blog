@@ -1,4 +1,5 @@
 # Machine Learning Helping My Lazyness
+tags: elixir, machine-learning
 
 Writing blog posts can be a bit tricky, annoying, and a lot of other things but the worst part is the laziness of finishing it...
 
