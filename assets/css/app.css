@@ -142,16 +142,135 @@
   }
 }
 
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding: 4rem 0 3rem;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.hero-title {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+  font-size: 3rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Post Grid */
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 4rem;
+}
+
+/* Post Card */
+.post-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.post-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.post-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* Post Image Placeholder */
+.post-image-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-image-icon {
+  font-size: 4rem;
+}
+
+/* Post Card Content */
+.post-card-content {
+  padding: 1.5rem;
+}
+
+.post-card-title {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+  color: #111827;
+}
+
+.post-card-description {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #6b7280;
+  margin: 0 0 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Tag Pills */
 .tag-pill {
   display: inline-block;
-  padding: 2px 8px;
-  margin: 2px 4px;
+  padding: 4px 12px;
   font-size: 0.75rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
   border-radius: 12px;
   background-color: #e0e7ff;
   color: #3730a3;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.post-card:hover .tag-pill {
+  background-color: #c7d2fe;
 }
 
 .post-tags {
   margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .post-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
 }

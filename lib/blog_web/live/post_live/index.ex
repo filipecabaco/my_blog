@@ -20,17 +20,32 @@ defmodule BlogWeb.PostLive.Index do
       <%= if Enum.empty?(@posts) do %>
         <p>No posts found. Please ensure GITHUB_API_TOKEN is set correctly.</p>
       <% else %>
-        <ul>
+        <section class="hero">
+          <h1 class="hero-title">Technical Blog</h1>
+          <p class="hero-subtitle">Code, architecture, and discoveries</p>
+        </section>
+
+        <div class="post-grid">
           <%= for post <- @posts do %>
             <% path = if @branch, do: ~p"/post/#{post.title}?branch=#{@branch}", else: ~p"/post/#{post.title}" %>
-            <li>
-              <.link navigate={path}>{post.label}</.link>
-              <%= for tag <- post.tags do %>
-                <span class="tag-pill">{tag}</span>
-              <% end %>
-            </li>
+            <article class="post-card">
+              <.link navigate={path} class="post-card-link">
+                <div class="post-image-placeholder">
+                  <span class="post-image-icon">📝</span>
+                </div>
+                <div class="post-card-content">
+                  <h2 class="post-card-title">{post.label}</h2>
+                  <p class="post-card-description">{post.description}</p>
+                  <div class="post-card-tags">
+                    <%= for tag <- post.tags do %>
+                      <span class="tag-pill">{tag}</span>
+                    <% end %>
+                  </div>
+                </div>
+              </.link>
+            </article>
           <% end %>
-        </ul>
+        </div>
       <% end %>
     </main>
     """
@@ -40,13 +55,18 @@ defmodule BlogWeb.PostLive.Index do
     Posts.list_post(branch)
     |> Enum.map(&String.replace(&1, ".md", ""))
     |> Enum.map(fn title ->
-      tags =
-        case Posts.get_post(title, branch) do
-          content when is_binary(content) -> Posts.tags(content)
-          _ -> []
-        end
+      case Posts.get_post(title, branch) do
+        content when is_binary(content) ->
+          %{
+            title: title,
+            label: Phoenix.Naming.humanize(title),
+            tags: Posts.tags(content),
+            description: Posts.description(content)
+          }
 
-      %{title: title, label: Phoenix.Naming.humanize(title), tags: tags}
+        _ ->
+          %{title: title, label: Phoenix.Naming.humanize(title), tags: [], description: ""}
+      end
     end)
   end
 end
