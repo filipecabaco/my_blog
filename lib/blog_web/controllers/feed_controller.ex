@@ -1,5 +1,8 @@
 defmodule BlogWeb.FeedController do
-  use BlogWeb, :controller
+  use Phoenix.Controller, formats: []
+
+  import Plug.Conn
+
   alias Blog.Feed
 
   def index(conn, _) do

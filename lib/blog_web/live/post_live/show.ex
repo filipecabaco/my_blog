@@ -3,6 +3,7 @@ defmodule BlogWeb.PostLive.Show do
 
   alias Blog.Posts
   alias Blog.ReadTag.Supervisor
+  import BlogWeb.Layouts, only: [flash: 1]
 
   @impl true
   def mount(%{"title" => title}, _, socket) do
@@ -16,15 +17,31 @@ defmodule BlogWeb.PostLive.Show do
   @impl true
   def handle_params(%{"title" => title} = params, _, socket) do
     branch = Map.get(params, "branch")
-    post = Posts.get_post(title, branch)
-    description = Posts.description(post)
 
-    {:noreply,
-     socket
-     |> assign(:page_title, Phoenix.Naming.humanize(title))
-     |> assign(:title, title)
-     |> assign(:description, description)
-     |> assign(:post, Posts.parse(post))}
+    case Posts.get_post(title, branch) do
+      {:error, reason} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to load post: #{reason}")
+         |> assign(:page_title, Phoenix.Naming.humanize(title))
+         |> assign(:title, title)
+         |> assign(:description, "")
+         |> assign(:post, "<p>Post not found or failed to load.</p>")}
+
+      post ->
+        parsed_post =
+          case Posts.parse(post) do
+            {:error, _reason} -> "<p>Failed to parse post content.</p>"
+            html -> html
+          end
+
+        {:noreply,
+         socket
+         |> assign(:page_title, Phoenix.Naming.humanize(title))
+         |> assign(:title, title)
+         |> assign(:description, Posts.description(post))
+         |> assign(:post, parsed_post)}
+    end
   end
 
   @impl true
@@ -84,22 +101,6 @@ defmodule BlogWeb.PostLive.Show do
       </span>
       <div>Total readers: {@counter}</div>
     </main>
-    """
-  end
-
-  attr :kind, :atom, required: true
-  attr :flash, :map, required: true
-
-  defp flash(assigns) do
-    message = Phoenix.Flash.get(assigns.flash, assigns.kind)
-    assigns = assign(assigns, :message, message)
-
-    ~H"""
-    <%= if @message do %>
-      <p class={"alert alert-#{@kind}"} role="alert" phx-click="lv:clear-flash" phx-value-key={@kind}>
-        {@message}
-      </p>
-    <% end %>
     """
   end
 end

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="csrf-token" content={csrf_token_value()} />
+    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
     <link href="atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
 
     <%= if assigns[:page_title] do %>
@@ -15,7 +15,7 @@
       <meta property="og:description" content={@description} />
       <meta property="og:type" content="website" />
       <%= if assigns[:title] do %>
-        <meta property="og:url" content={BlogWeb.Endpoint.url() <> Routes.post_show_path(BlogWeb.Endpoint, :show, @title)} />
+        <meta property="og:url" content={BlogWeb.Endpoint.url() <> ~p"/post/#{@title}"} />
       <% end %>
       <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/logo.png"} />
       <meta property="og:image:width" content="128" />

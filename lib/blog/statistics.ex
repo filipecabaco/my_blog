@@ -18,7 +18,10 @@ defmodule Blog.Statistics do
   end
 
   @impl true
-  def terminate(_reason, _state), do: :dets.close(:statistics)
+  def terminate(_reason, _state) do
+    :telemetry.detach(__MODULE__)
+    :dets.close(:statistics)
+  end
 
   @impl true
   def handle_info({:EXIT, _pid, reason}, state) do

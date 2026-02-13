@@ -35,7 +35,6 @@ defmodule Blog.MixProject do
     [
       {:phoenix, "~> 1.8"},
       {:phoenix_html, "~> 4.3"},
-      {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.4", only: :dev},
       {:phoenix_live_view, "~> 1.1"},
       {:lazy_html, ">= 0.0.0", only: :test},

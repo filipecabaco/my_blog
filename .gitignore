@@ -32,5 +32,6 @@ blog-*.tar
 npm-debug.log
 /assets/node_modules/
 
-# Environment variables - keep .env but ignore .env.local
+# Environment variables
+.env
 .env.local

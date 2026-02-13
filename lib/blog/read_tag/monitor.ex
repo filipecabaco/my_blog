@@ -12,11 +12,15 @@ defmodule Blog.ReadTag.Monitor do
 
   def handle_info(:clean, state) do
     Enum.each(:global.registered_names(), fn id ->
-      %{title: title, socket: %{root_pid: root_pid, id: id}} = Supervisor.get_state(id)
+      case Supervisor.get_state(id) do
+        %{title: title, socket: %{root_pid: root_pid, id: id}} ->
+          unless Process.alive?(root_pid) do
+            Supervisor.terminate(id)
+            BlogWeb.Endpoint.broadcast!("read_tag", "delete_tag", %{id: id, title: title})
+          end
 
-      unless Process.alive?(root_pid) do
-        Supervisor.terminate(id)
-        BlogWeb.Endpoint.broadcast!("read_tag", "delete_tag", %{id: id, title: title})
+        nil ->
+          :ok
       end
     end)
 
