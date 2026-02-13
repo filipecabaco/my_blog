@@ -1,5 +1,5 @@
 # Machine learning, LiveView powered Desktop Applications
-tags: elixir, liveview, tauri, machine-learning
+tags: backend, real-time, applications, machine-learning
 
 There are multiple ways to interact with your software and one of the most common ones is Desktop applications. It's a very tricky area but a recent project has made it a lot easier - [Tauri](https://tauri.app/). In this post we're going to build a Liveview applications that uses Bumblebee and a new proof of concept library to install [Tauri](https://tauri.app/) in your Phoenix project called [ex_tauri](https://github.com/filipecabaco/ex_tauri)
 

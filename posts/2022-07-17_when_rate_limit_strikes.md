@@ -1,5 +1,5 @@
 # When Rate limit strikes!
-tags: elixir, phoenix
+tags: backend, web
 
 Well that was quick... Github API warned me that I've spent all my Rate limiting due to the fact that I'm using their Public API without Authorization and well that is expected... To handle this problem I'm going to use a really basic solution: I will cache whatever information I want from their API and store it in memory and I will use only what Elixir has without extra dependencies to do so.
 

@@ -1,5 +1,5 @@
 # Statistics on the cheap
-tags: elixir, phoenix, liveview
+tags: backend, web, real-time
 
 In an homage to 90's websites I wanted to add a read counter but with a modern twist... DETS, GenServer, Telemetry, Phoenix.LiveView, Phoenix.PubSub we will create a counter that has live updates so we can track how many people actually read the content 🧐.
 
