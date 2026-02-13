@@ -41,7 +41,7 @@ mix deps.get
 
 # Install npm dependencies
 echo "📦 Installing npm dependencies..."
-cd assets && npm install --legacy-peer-deps && cd ..
+cd assets && npm install && cd ..
 
 echo ""
 echo "✅ Setup complete!"
