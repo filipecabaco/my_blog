@@ -58,8 +58,8 @@ defmodule Blog.Images do
 
     cond do
       # Check explicit override
-      Map.has_key?(metadata, :image_strategy) ->
-        String.to_atom(metadata.image_strategy)
+      strategy = Map.get(metadata, :image_strategy) ->
+        String.to_atom(strategy)
 
       # Check tag-based mapping
       strategy = find_strategy_by_tags(tags) ->
