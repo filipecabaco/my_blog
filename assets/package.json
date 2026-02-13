@@ -10,8 +10,8 @@
     "keywords": [],
     "description": "",
     "dependencies": {
-        "vega": "^6.2.0",
-        "vega-embed": "^6.24.0",
+        "vega": "^5.33.1",
+        "vega-embed": "^6.29.0",
         "vega-lite": "^5.16.3"
     }
 }
