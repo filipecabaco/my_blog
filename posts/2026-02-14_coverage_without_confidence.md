@@ -1,5 +1,5 @@
 # Coverage Without Confidence
-tags: backend
+tags: backend, web
 
 There's something deeply unsatisfying about having 90% test coverage and still being afraid to deploy on a Friday. I recently went through the exercise of improving coverage on a large Elixir codebase and came out the other side with opinions about what coverage actually means and what it doesn't.
 
@@ -29,7 +29,7 @@ rescue
 end
 ```
 
-A test that just calls this function and checks `{:ok, _conn, _count}` covers every line. But does it verify what happens when the `schema_migrations` table doesn't exist? When the connection count is at the limit? When the transaction fails mid-way? Coverage says green. Confidence says maybe 😅
+A test that just calls this function and checks `{:ok, _conn, _count}` covers every line. But does it verify what happens when the `schema_migrations` table doesn't exist? When the connection count is at the limit? When the transaction fails mid-way? Coverage says green. Confidence says maybe.
 
 ## What Coverage Actually Misses
 
@@ -50,28 +50,26 @@ Each pipe runs in sequence for one tenant. But what if `ReconcileMigrations` for
 
 ### Mocked Boundaries
 
-When we stub out external calls, coverage looks great but we're not testing the real thing:
+When we stub out external calls, coverage looks great but we're not testing the real thing. This applies whether you're stubbing a GitHub API call in a blog or a tenant database connection in a real-time system. The pattern is the same: the stub always returns well-formed data, so coverage includes lines that never face timeouts, rate limits, or malformed responses.
 
-```elixir
-setup do
-  Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
-
-  Req.Test.stub(__MODULE__, fn conn ->
-    case conn.request_path do
-      "/repos/filipecabaco/my_blog/contents/posts" ->
-        Req.Test.json(conn, [%{"name" => "2024-01-15_test_post.md"}])
-      _ ->
-        Req.Test.json(conn, %{"message" => "Not Found"})
-    end
-  end)
-end
-```
-
-This is the right approach for unit tests. The `Req.Test` plug gives deterministic results without hitting GitHub's API. But it means our coverage includes lines that never actually talk to the real service. The stub always returns well-formed JSON. What about timeouts? Rate limits? Malformed responses?
+The right move is to be honest about what stubs cover. Use them for unit tests where you need determinism, but don't count that coverage as proof that the integration works.
 
 ### The Rescue Path Nobody Tests
 
 Look at that `rescue` block in `query_connection_info`. Does any test actually trigger it? Probably not. The happy path covers the function. The rescue clause gets counted because Elixir compiles it but no test verifies the error handling behavior.
+
+To actually test it, you need to force the failure. For a Postgrex connection, that means killing the connection mid-transaction or pointing the query at a database that rejects it:
+
+```elixir
+test "handles connection failure during query", %{tenant: tenant} do
+  {:ok, conn} = Database.connect(tenant, "realtime_test", :stop)
+  GenServer.stop(conn)
+
+  assert {:error, _} = Database.check_tenant_connection(tenant, conn)
+end
+```
+
+This kind of test rarely shows up in coverage reports because the happy path already "covers" the function. But it's the test that actually matters when things go wrong in production.
 
 ## What Actually Builds Confidence
 
@@ -125,7 +123,7 @@ coverage:
         carryforward: "partition-1,partition-2,partition-3,partition-4"
 ```
 
-The total coverage number stays the same but now you get it 4x faster and each partition can have its own isolated database, avoiding the flakiness that comes from shared state 🧐
+The total coverage number stays the same but now you get it 4x faster and each partition can have its own isolated database, avoiding the flakiness that comes from shared state.
 
 ### Integration Tests Over Mocks
 
@@ -142,19 +140,13 @@ end
 
 ## The Coverage Sweet Spot
 
-After going through the cycle of ignoring coverage, chasing percentages, and getting burned despite high numbers, here's where I've landed:
+After going through the cycle of ignoring coverage, chasing percentages, and getting burned despite high numbers, here's what worked for us:
 
-- 60-80% line coverage is usually the sweet spot
+- 60-80% line coverage ended up being our practical range
 - Focus effort on critical paths: tenant connections, migrations, authorization
 - Use coverage to find blind spots, not as a quality metric
 - Integration tests on core flows, stubs for external boundaries
 - Partition your CI so the feedback loop stays fast
-
-## Caveats
-
-Coverage thresholds in CI are still useful as a floor. Setting a minimum catches the case where someone adds a large module with zero tests. That's different from treating the number as a quality guarantee.
-
-And there are codebases where high coverage genuinely correlates with quality. Typically ones where the team writes tests first and coverage is a side effect, not a goal.
 
 ## Conclusion
 
