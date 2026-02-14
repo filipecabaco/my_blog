@@ -19,7 +19,7 @@ defmodule Blog.FeedTest do
 
   setup do
     Blog.Posts.invalidate_cache()
-    Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
+    Application.put_env(:blog, :req_options, plug: {Req.Test, Blog.Posts})
 
     on_exit(fn ->
       Application.delete_env(:blog, :req_options)
@@ -28,7 +28,7 @@ defmodule Blog.FeedTest do
   end
 
   defp stub_posts(posts) do
-    Req.Test.stub(__MODULE__, fn conn ->
+    Req.Test.stub(Blog.Posts, fn conn ->
       case conn.request_path do
         "/repos/filipecabaco/my_blog/contents/posts" ->
           entries = Enum.map(posts, fn {name, _content} -> %{"name" => "#{name}.md"} end)
@@ -56,11 +56,14 @@ defmodule Blog.FeedTest do
           end
       end
     end)
+
+    Req.Test.allow(Blog.Posts, self(), Process.whereis(Blog.Posts))
   end
 
   describe "build/0" do
     test "returns valid Atom XML with xmlns" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -70,6 +73,7 @@ defmodule Blog.FeedTest do
 
     test "includes feed header with title, subtitle, links, id, and author" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -87,6 +91,7 @@ defmodule Blog.FeedTest do
         {"2023-06-01_older_post", @post_content},
         {"2024-03-20_newer_post", @second_post_content}
       ])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -95,6 +100,7 @@ defmodule Blog.FeedTest do
 
     test "generates entry with id, title, updated, summary, link, and image" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -111,6 +117,7 @@ defmodule Blog.FeedTest do
 
     test "includes category elements for tags" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -120,6 +127,7 @@ defmodule Blog.FeedTest do
 
     test "skips entries without a parseable date in the filename" do
       stub_posts([{"no_date_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -132,6 +140,7 @@ defmodule Blog.FeedTest do
         {"2024-03-20_newer_post", @second_post_content},
         {"2023-06-01_older_post", @post_content}
       ])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -142,6 +151,7 @@ defmodule Blog.FeedTest do
 
     test "header elements appear before entries" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 
@@ -152,6 +162,7 @@ defmodule Blog.FeedTest do
 
     test "returns valid feed with no posts" do
       stub_posts([])
+      Blog.Posts.refresh()
 
       xml = Feed.build()
 

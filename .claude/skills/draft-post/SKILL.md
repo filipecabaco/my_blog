@@ -124,6 +124,14 @@ Rest of content...
 
 **Code examples must be real** -- all code examples in posts must come from real source code found during Step 1 research (PRs, commits, repos). Adapt examples slightly to better illustrate the point, but they should remain authentic and traceable to the source. Never use randomly generated or fabricated code samples.
 
+**Post length**: Posts can be either **standard** or **short form**:
+- **Standard** (~1000-2000 words, ~7-14 min read): Deep dives with multiple code examples, caveats section, and progression from simple to complex.
+- **Short form** (~300-600 words, ~2-4 min read): Focused on a single insight, trick, or lesson learned. One or two code examples max. Get to the point fast. Good for quick wins, TILs, or opinionated takes.
+
+When proposing a topic, suggest the appropriate length. Not every topic needs a deep dive — shorter posts are great for sharing a single useful pattern or gotcha.
+
+The blog calculates reading time at ~150 WPM (accounting for code blocks in technical posts) and displays it on both the homepage cards and individual post pages.
+
 **Framing guideline**: Frame the post around the general engineering principle, not the specific project:
 - Good: "Strategies for Testing Async Systems" (universal)
 - Bad: "How We Test Supabase Realtime" (project-specific)

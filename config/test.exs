@@ -6,6 +6,7 @@ config :blog, BlogWeb.Endpoint,
   server: false
 
 config :blog, :github_token, "test-token"
+config :blog, :skip_warmup, true
 
 config :logger, level: :warning
 

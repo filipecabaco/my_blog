@@ -49,10 +49,13 @@ defmodule BlogWeb.PostLive.Index do
                 <div class="post-card-content">
                   <h2 class="post-card-title">{post.label}</h2>
                   <p class="post-card-description">{post.description}</p>
-                  <div class="post-card-tags">
-                    <%= for tag <- post.tags do %>
-                      <span class="tag-pill">{tag}</span>
-                    <% end %>
+                  <div class="post-card-meta">
+                    <div class="post-card-tags">
+                      <%= for tag <- post.tags do %>
+                        <span class="tag-pill">{tag}</span>
+                      <% end %>
+                    </div>
+                    <span class="post-card-reading-time">{post.reading_time} min read</span>
                   </div>
                 </div>
               </.link>
@@ -74,11 +77,12 @@ defmodule BlogWeb.PostLive.Index do
             title: title,
             label: Phoenix.Naming.humanize(title),
             tags: Posts.tags(content),
-            description: Posts.description(content)
+            description: Posts.description(content),
+            reading_time: Posts.reading_time(content)
           }
 
         _ ->
-          %{title: title, label: Phoenix.Naming.humanize(title), tags: [], description: ""}
+          %{title: title, label: Phoenix.Naming.humanize(title), tags: [], description: "", reading_time: 1}
       end
     end)
   end

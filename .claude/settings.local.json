@@ -12,7 +12,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(git -C /Users/filipecabaco/workspace/my_blog log --oneline --all -30)",
+      "Bash(mix deps:*)"
     ]
   }
 }

@@ -72,6 +72,22 @@ defmodule Blog.PostsTest do
     end
   end
 
+  describe "reading_time/1" do
+    test "calculates reading time based on word count at 150 WPM" do
+      post = String.duplicate("word ", 300)
+      assert Posts.reading_time(post) == 2
+    end
+
+    test "returns minimum of 1 minute for short posts" do
+      assert Posts.reading_time("short post") == 1
+    end
+
+    test "rounds up to next minute" do
+      post = String.duplicate("word ", 200)
+      assert Posts.reading_time(post) == 2
+    end
+  end
+
   describe "parse/1" do
     test "converts markdown to HTML" do
       html = Posts.parse("# Hello\n\nWorld")

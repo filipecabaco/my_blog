@@ -7,9 +7,9 @@ defmodule BlogWeb.PostLiveTest do
 
   setup do
     Blog.Posts.invalidate_cache()
-    Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
+    Application.put_env(:blog, :req_options, plug: {Req.Test, Blog.Posts})
 
-    Req.Test.stub(__MODULE__, fn conn ->
+    Req.Test.stub(Blog.Posts, fn conn ->
       case conn.request_path do
         "/repos/filipecabaco/my_blog/contents/posts" ->
           Req.Test.json(conn, [%{"name" => "2024-01-15_test_post.md"}])
@@ -32,6 +32,9 @@ defmodule BlogWeb.PostLiveTest do
           Req.Test.json(conn, %{"message" => "Not Found"})
       end
     end)
+
+    Req.Test.allow(Blog.Posts, self(), Process.whereis(Blog.Posts))
+    Blog.Posts.refresh()
 
     on_exit(fn ->
       Application.delete_env(:blog, :req_options)
@@ -60,6 +63,12 @@ defmodule BlogWeb.PostLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ "A test post description"
+    end
+
+    test "displays reading time on cards", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ "min read"
     end
 
     test "renders post image", %{conn: conn} do
@@ -216,6 +225,12 @@ defmodule BlogWeb.PostLiveTest do
 
       assert html =~ "?pr=42"
       assert html =~ "Back to posts"
+    end
+
+    test "displays reading time", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      assert html =~ "min read"
     end
   end
 

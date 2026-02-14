@@ -5,9 +5,9 @@ defmodule BlogWeb.FeedControllerTest do
 
   setup do
     Blog.Posts.invalidate_cache()
-    Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
+    Application.put_env(:blog, :req_options, plug: {Req.Test, Blog.Posts})
 
-    Req.Test.stub(__MODULE__, fn conn ->
+    Req.Test.stub(Blog.Posts, fn conn ->
       case conn.request_path do
         "/repos/filipecabaco/my_blog/contents/posts" ->
           Req.Test.json(conn, [%{"name" => "2024-01-15_test_post.md"}])
@@ -19,6 +19,9 @@ defmodule BlogWeb.FeedControllerTest do
           Plug.Conn.send_resp(conn, 200, "# Test Post\ntags: elixir\n\nA test post")
       end
     end)
+
+    Req.Test.allow(Blog.Posts, self(), Process.whereis(Blog.Posts))
+    Blog.Posts.refresh()
 
     on_exit(fn ->
       Application.delete_env(:blog, :req_options)

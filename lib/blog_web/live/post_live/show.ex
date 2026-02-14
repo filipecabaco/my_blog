@@ -38,6 +38,7 @@ defmodule BlogWeb.PostLive.Show do
          |> assign(:pr, pr)
          |> assign(:description, "")
          |> assign(:tags, [])
+         |> assign(:reading_time, 0)
          |> assign(:post, "<p>Post not found or failed to load.</p>")}
 
       post ->
@@ -54,6 +55,7 @@ defmodule BlogWeb.PostLive.Show do
          |> assign(:pr, pr)
          |> assign(:description, Posts.description(post))
          |> assign(:tags, Posts.tags(post))
+         |> assign(:reading_time, Posts.reading_time(post))
          |> assign(:post, parsed_post)}
     end
   end
@@ -110,13 +112,16 @@ defmodule BlogWeb.PostLive.Show do
         <.live_component module={BlogWeb.Components.ReadTag} id={"read_tag_#{read_tag.socket.id}"} title={@title} owner_id={read_tag.socket.id} />
       <% end %>
 
-      <%= if @tags != [] do %>
-        <div class="post-tags">
-          <%= for tag <- @tags do %>
-            <span class="tag-pill">{tag}</span>
-          <% end %>
-        </div>
-      <% end %>
+      <div class="post-meta">
+        <%= if @tags != [] do %>
+          <div class="post-tags">
+            <%= for tag <- @tags do %>
+              <span class="tag-pill">{tag}</span>
+            <% end %>
+          </div>
+        <% end %>
+        <span class="post-reading-time">{@reading_time} min read</span>
+      </div>
 
       {raw(@post)}
 

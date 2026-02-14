@@ -5,6 +5,7 @@ defmodule Blog.Posts do
   @url "https://api.github.com/repos/filipecabaco/my_blog/contents/posts"
   @table __MODULE__
   @ttl :timer.minutes(30)
+  @refresh_interval :timer.minutes(25)
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -13,19 +14,47 @@ defmodule Blog.Posts do
   @impl true
   def init(_opts) do
     :ets.new(@table, [:named_table, :set, :public, read_concurrency: true])
-    {:ok, %{}}
+
+    if Application.get_env(:blog, :skip_warmup, false) do
+      {:ok, %{}}
+    else
+      {:ok, %{}, {:continue, :warmup}}
+    end
   end
+
+  @impl true
+  def handle_continue(:warmup, state) do
+    do_refresh()
+    schedule_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:refresh, state) do
+    do_refresh()
+    schedule_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(:refresh, state) do
+    do_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_call(:refresh, _from, state) do
+    do_refresh()
+    {:reply, :ok, state}
+  end
+
+  def refresh, do: GenServer.call(__MODULE__, :refresh, 30_000)
 
   @spec list_post(String.t() | nil) :: [String.t()]
   def list_post(nil) do
     case lookup(:titles) do
-      {:ok, titles} ->
-        titles
-
-      :miss ->
-        titles = fetch_titles("master")
-        insert(:titles, titles)
-        titles
+      {:ok, titles} -> titles
+      :miss -> []
     end
   end
 
@@ -36,18 +65,8 @@ defmodule Blog.Posts do
 
   def get_post(title, nil) do
     case lookup({:post, title}) do
-      {:ok, post} ->
-        post
-
-      :miss ->
-        case fetch_post(title, "master") do
-          {:error, _} = error ->
-            error
-
-          post ->
-            insert({:post, title}, post)
-            post
-        end
+      {:ok, post} -> post
+      :miss -> {:error, "not yet loaded"}
     end
   end
 
@@ -72,7 +91,10 @@ defmodule Blog.Posts do
   end
 
   def invalidate_cache do
-    :ets.delete_all_objects(@table)
+    if :ets.whereis(@table) != :undefined do
+      :ets.delete_all_objects(@table)
+    end
+
     :ok
   end
 
@@ -106,6 +128,14 @@ defmodule Blog.Posts do
     end
   end
 
+  @spec reading_time(String.t()) :: pos_integer()
+  def reading_time(post) do
+    post
+    |> String.split(~r/\s+/, trim: true)
+    |> length()
+    |> then(&max(ceil(&1 / 150), 1))
+  end
+
   @spec parse(String.t()) :: String.t() | {:error, String.t()}
   def parse(post) do
     stripped = Regex.replace(~r/^tags:\s*.+$/m, post, "")
@@ -120,12 +150,38 @@ defmodule Blog.Posts do
     end
   end
 
+  defp do_refresh do
+    titles = fetch_titles("master")
+
+    if titles != [] do
+      insert(:titles, titles)
+
+      titles
+      |> Enum.map(&String.replace(&1, ".md", ""))
+      |> Enum.each(fn title ->
+        case fetch_post(title, "master") do
+          {:error, _} -> :ok
+          post -> insert({:post, title}, post)
+        end
+      end)
+    end
+  rescue
+    e -> Logger.warning("Cache refresh failed: #{Exception.message(e)}")
+  end
+
+  defp schedule_refresh do
+    Process.send_after(self(), :refresh, @refresh_interval)
+  end
+
   defp lookup(key) do
     case :ets.lookup(@table, key) do
       [{^key, value, inserted_at}] ->
-        if System.monotonic_time(:millisecond) - inserted_at < @ttl,
-          do: {:ok, value},
-          else: :miss
+        if System.monotonic_time(:millisecond) - inserted_at < @ttl do
+          {:ok, value}
+        else
+          GenServer.cast(__MODULE__, :refresh)
+          {:ok, value}
+        end
 
       _ ->
         :miss
@@ -175,7 +231,7 @@ defmodule Blog.Posts do
   end
 
   defp req_get(url, opts \\ []) do
-    [url: url, headers: [{"Authorization", "Bearer #{token()}"}]]
+    [url: url, headers: [{"Authorization", "Bearer #{token()}"}], receive_timeout: 15_000, connect_options: [timeout: 5_000]]
     |> Keyword.merge(opts)
     |> Keyword.merge(Application.get_env(:blog, :req_options, []))
     |> Req.new()
