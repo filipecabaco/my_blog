@@ -35,6 +35,7 @@ defmodule Blog.Statistics do
   end
 
   def fetch(title), do: GenServer.call(__MODULE__, {:fetch, title})
+
   def handle_event([:blog, :visit], _, %{title: title}, _) do
     key = to_charlist(title)
     :dets.insert_new(:statistics, {key, 0})

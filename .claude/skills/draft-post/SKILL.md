@@ -14,6 +14,8 @@ End-to-end workflow: research contributions, extract broad engineering themes, p
 
 ## Step 1: Research Author Contributions
 
+**Model**: Use `haiku` — this is a research/context-gathering step.
+
 Fetch recent public activity for `filipecabaco` using `gh` CLI:
 
 ```bash
@@ -36,6 +38,8 @@ gh search prs --author=filipecabaco --sort=created --limit=20
 
 ## Step 2: Research Trending Engineering Topics
 
+**Model**: Use `haiku` — this is a research/context-gathering step.
+
 Use WebSearch to check what broader engineering topics are trending:
 
 - Search Hacker News for discussions on testing, debugging, performance, architecture, developer experience
@@ -45,6 +49,8 @@ Use WebSearch to check what broader engineering topics are trending:
 **Focus on universal themes**: testing strategies, debugging techniques, performance optimization, CI/CD practices, developer tooling, architecture patterns, code quality, etc.
 
 ## Step 3: Select Topic (Requires User Approval)
+
+**Model**: Use `sonnet` — this is a summarizing/decision-making step.
 
 Pick the topic that best satisfies all four criteria:
 1. **Broad applicability**: Universal engineering theme, not tied to specific projects/technologies
@@ -61,6 +67,8 @@ gh api "repos/filipecabaco/my_blog/contents/posts" -q '.[].name'
 **IMPORTANT**: Present the chosen topic and a brief outline to the user and wait for approval before proceeding. Do NOT write the full draft until the user confirms.
 
 ## Step 4: Write the Draft Post
+
+**Model**: Use `opus` — this is a writing/implementation step.
 
 ### Required Assets Per Post
 
@@ -154,6 +162,8 @@ rm priv/static/images/posts/SLUG.svg
 ```
 
 ## Step 5: Push and Open Draft PR
+
+**Model**: Use `haiku` — this is a mechanical git operations step.
 
 Commit, push the branch, and open a draft PR with a preview link:
 

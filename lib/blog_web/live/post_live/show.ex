@@ -20,7 +20,9 @@ defmodule BlogWeb.PostLive.Show do
 
     branch =
       case pr do
-        nil -> nil
+        nil ->
+          nil
+
         pr_number ->
           case Posts.pr_branch(pr_number) do
             {:ok, branch} -> branch
@@ -39,6 +41,7 @@ defmodule BlogWeb.PostLive.Show do
          |> assign(:description, "")
          |> assign(:tags, [])
          |> assign(:reading_time, 0)
+         |> assign(:published_date, Posts.published_date(title))
          |> assign(:post, "<p>Post not found or failed to load.</p>")}
 
       post ->
@@ -56,6 +59,7 @@ defmodule BlogWeb.PostLive.Show do
          |> assign(:description, Posts.description(post))
          |> assign(:tags, Posts.tags(post))
          |> assign(:reading_time, Posts.reading_time(post))
+         |> assign(:published_date, Posts.published_date(title))
          |> assign(:post, parsed_post)}
     end
   end

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -7,14 +7,21 @@
     <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
     <link href="/atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
     <link rel="icon" href={~p"/favicon.ico"} type="image/x-icon" />
+    <link rel="icon" type="image/svg+xml" href={~p"/images/logo.svg"} />
+    <link rel="icon" type="image/png" href={~p"/images/logo.png"} />
     <link rel="apple-touch-icon" href={~p"/images/apple-touch-icon.png"} />
 
     <meta name="twitter:site" content="@filipecabaco" />
     <meta name="twitter:creator" content="@filipecabaco" />
     <meta property="og:site_name" content="Filipe Cabaco Blog" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="theme-color" content="#0d1117" />
 
     <%= if assigns[:title] do %>
+      <meta name="description" content={assigns[:description] || ""} />
+      <link rel="canonical" href={BlogWeb.Endpoint.url() <> "/post/#{@title}"} />
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image:alt" content={assigns[:page_title] || "Filipe Cabaco Blog"} />
       <meta property="og:title" content={assigns[:page_title] || "Filipe Cabaco Blog"} />
       <meta property="og:description" content={assigns[:description] || ""} />
       <meta property="og:type" content="article" />
@@ -22,8 +29,26 @@
       <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/posts/#{@title}.png"} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:alt" content={assigns[:page_title] || "Filipe Cabaco Blog"} />
+      <%= if assigns[:published_date] do %>
+        <meta property="article:published_time" content={@published_date} />
+      <% end %>
+      <meta property="article:author" content="Filipe Cabaco" />
+      <%= for tag <- (assigns[:tags] || []) do %>
+        <meta property="article:tag" content={tag} />
+      <% end %>
+      <meta name="twitter:label1" content="Written by" />
+      <meta name="twitter:data1" content="Filipe Cabaco" />
+      <%= if assigns[:reading_time] do %>
+        <meta name="twitter:label2" content="Reading time" />
+        <meta name="twitter:data2" content={"#{@reading_time} min read"} />
+      <% end %>
     <% else %>
+      <meta name="description" content="Building things, breaking things, writing about it" />
+      <link rel="canonical" href={BlogWeb.Endpoint.url()} />
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:image:alt" content="Filipe Cabaco Blog" />
       <meta property="og:title" content="Filipe Cabaco Blog" />
       <meta property="og:description" content="Building things, breaking things, writing about it" />
       <meta property="og:type" content="website" />
@@ -31,11 +56,41 @@
       <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/og-root.png"} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:alt" content="Filipe Cabaco Blog" />
     <% end %>
 
     <.live_title prefix="Filipe Cabaco Blog ">
       <%= assigns[:page_title] || "" %>
     </.live_title>
+    <%= if assigns[:title] do %>
+      <script type="application/ld+json">
+        <%= raw(Jason.encode!(%{
+          "@context" => "https://schema.org",
+          "@type" => "BlogPosting",
+          "headline" => assigns[:page_title] || "Filipe Cabaco Blog",
+          "description" => assigns[:description] || "",
+          "image" => BlogWeb.Endpoint.url() <> "/images/posts/#{@title}.png",
+          "url" => BlogWeb.Endpoint.url() <> "/post/#{@title}",
+          "datePublished" => assigns[:published_date],
+          "author" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com"},
+          "publisher" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com", "logo" => %{"@type" => "ImageObject", "url" => BlogWeb.Endpoint.url() <> "/images/logo.png"}},
+          "mainEntityOfPage" => %{"@type" => "WebPage", "@id" => BlogWeb.Endpoint.url() <> "/post/#{@title}"},
+          "keywords" => Enum.join(assigns[:tags] || [], ", ")
+        })) %>
+      </script>
+    <% else %>
+      <script type="application/ld+json">
+        <%= raw(Jason.encode!(%{
+          "@context" => "https://schema.org",
+          "@type" => "WebSite",
+          "name" => "Filipe Cabaco Blog",
+          "description" => "Building things, breaking things, writing about it",
+          "url" => BlogWeb.Endpoint.url()
+        })) %>
+      </script>
+    <% end %>
+
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
   </head>

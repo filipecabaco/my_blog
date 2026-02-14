@@ -91,6 +91,7 @@ defmodule Blog.FeedTest do
         {"2023-06-01_older_post", @post_content},
         {"2024-03-20_newer_post", @second_post_content}
       ])
+
       Blog.Posts.refresh()
 
       xml = Feed.build()
@@ -140,6 +141,7 @@ defmodule Blog.FeedTest do
         {"2024-03-20_newer_post", @second_post_content},
         {"2023-06-01_older_post", @post_content}
       ])
+
       Blog.Posts.refresh()
 
       xml = Feed.build()

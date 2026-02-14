@@ -2,6 +2,7 @@ defmodule Blog.ReadTag do
   use GenServer
 
   def init(args), do: {:ok, args}
+
   def start_link(%{name: name, socket: socket, title: title}),
     do: GenServer.start_link(__MODULE__, %{title: title, color: random_rgb(), socket: socket, position: 0}, name: name)
 

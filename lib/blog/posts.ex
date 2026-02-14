@@ -128,6 +128,14 @@ defmodule Blog.Posts do
     end
   end
 
+  @spec published_date(String.t()) :: String.t() | nil
+  def published_date(title) do
+    case Regex.run(~r/^(\d{4}-\d{2}-\d{2})/, title) do
+      [_, date] -> date <> "T00:00:00+00:00"
+      nil -> nil
+    end
+  end
+
   @spec reading_time(String.t()) :: pos_integer()
   def reading_time(post) do
     post

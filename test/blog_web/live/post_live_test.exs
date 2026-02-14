@@ -83,6 +83,14 @@ defmodule BlogWeb.PostLiveTest do
       assert html =~ "filipecabaco.com"
       assert html =~ "hero-title"
     end
+
+    test "includes WebSite JSON-LD structured data on homepage", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/")
+
+      assert html =~ ~s(application/ld+json)
+      assert html =~ ~s("@type":"WebSite")
+      assert html =~ ~s("name":"Filipe Cabaco Blog")
+    end
   end
 
   describe "Index with PR preview" do
@@ -116,6 +124,17 @@ defmodule BlogWeb.PostLiveTest do
       assert html =~ ~s(og:title)
       assert html =~ ~s(og:image)
       assert html =~ "2024-01-15_test_post.png"
+    end
+
+    test "includes BlogPosting JSON-LD structured data", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      assert html =~ ~s(application/ld+json)
+      assert html =~ ~s("@type":"BlogPosting")
+      assert html =~ ~s("headline":"2024-01-15 test post")
+      assert html =~ ~s("datePublished":"2024-01-15T00:00:00+00:00")
+      assert html =~ ~s("name":"Filipe Cabaco")
+      assert html =~ ~s("keywords":"elixir, phoenix")
     end
 
     test "handles missing post gracefully", %{conn: conn} do
