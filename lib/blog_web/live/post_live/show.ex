@@ -11,7 +11,19 @@ defmodule BlogWeb.PostLive.Show do
 
     BlogWeb.Endpoint.subscribe("show")
     BlogWeb.Endpoint.subscribe("read_tag")
-    {:ok, assign(socket, %{counter: Blog.Statistics.fetch(title), read_tags: Supervisor.get_for_title(title)})}
+
+    {:ok,
+     assign(socket, %{
+       counter: Blog.Statistics.fetch(title),
+       read_tags: Supervisor.get_for_title(title),
+       title: title,
+       page_title: Phoenix.Naming.humanize(title),
+       description: "",
+       tags: [],
+       reading_time: 0,
+       published_date: Posts.published_date(title),
+       pr: nil
+     })}
   end
 
   @impl true

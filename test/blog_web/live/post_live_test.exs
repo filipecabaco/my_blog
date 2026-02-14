@@ -275,6 +275,35 @@ defmodule BlogWeb.PostLiveTest do
     end
   end
 
+  describe "Static render OG tags (crawler/Slack unfurl)" do
+    test "includes post-specific OG tags on static render", %{conn: conn} do
+      conn = get(conn, ~p"/post/2024-01-15_test_post")
+      html = html_response(conn, 200)
+
+      assert html =~ ~s(property="og:title" content="2024-01-15 test post")
+      assert html =~ ~s(property="og:image")
+      assert html =~ "2024-01-15_test_post.png"
+      assert html =~ ~s(property="og:type" content="article")
+      assert html =~ ~s(property="og:url")
+      assert html =~ "/post/2024-01-15_test_post"
+    end
+
+    test "does not fall back to homepage OG tags on static render of a post", %{conn: conn} do
+      conn = get(conn, ~p"/post/2024-01-15_test_post")
+      html = html_response(conn, 200)
+
+      refute html =~ ~s(property="og:type" content="website")
+    end
+
+    test "includes post-specific OG tags even for missing posts", %{conn: conn} do
+      conn = get(conn, ~p"/post/nonexistent_post")
+      html = html_response(conn, 200)
+
+      assert html =~ ~s(property="og:title" content="Nonexistent post")
+      assert html =~ ~s(property="og:type" content="article")
+    end
+  end
+
   describe "PR image proxy" do
     test "proxies image from PR branch", %{conn: conn} do
       conn = get(conn, "/pr/42/images/posts/2024-01-15_test_post.png")
