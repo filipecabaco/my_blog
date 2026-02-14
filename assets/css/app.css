@@ -52,7 +52,11 @@
    ========================================================================== */
 
 body {
-    background: var(--bg-primary);
+    background:
+        radial-gradient(ellipse at 20% 0%, var(--bg-secondary) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, var(--bg-secondary) 0%, transparent 50%),
+        var(--bg-primary);
+    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-mono);
     font-size: 18px;

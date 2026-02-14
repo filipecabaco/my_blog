@@ -6,11 +6,20 @@ defmodule Blog.MixProject do
       app: :blog,
       version: "0.1.0",
       elixir: "~> 1.19",
+      compilers: [:phoenix_live_view] ++ Mix.compilers(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      test_coverage: [
+        summary: [threshold: 84],
+        ignore_modules: [
+          BlogWeb.ErrorView,
+          BlogWeb.Router.Helpers,
+          BlogWeb
+        ]
+      ]
     ]
   end
 

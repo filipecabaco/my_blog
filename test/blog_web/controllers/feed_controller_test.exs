@@ -1,0 +1,45 @@
+defmodule BlogWeb.FeedControllerTest do
+  use BlogWeb.ConnCase, async: false
+
+  @moduletag capture_log: true
+
+  setup do
+    Blog.Posts.invalidate_cache()
+    Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      case conn.request_path do
+        "/repos/filipecabaco/my_blog/contents/posts" ->
+          Req.Test.json(conn, [%{"name" => "2024-01-15_test_post.md"}])
+
+        "/repos/filipecabaco/my_blog/contents/posts/2024-01-15_test_post.md" ->
+          Req.Test.json(conn, %{"download_url" => "http://test.local/raw/test.md"})
+
+        "/raw/test.md" ->
+          Plug.Conn.send_resp(conn, 200, "# Test Post\ntags: elixir\n\nA test post")
+      end
+    end)
+
+    on_exit(fn ->
+      Application.delete_env(:blog, :req_options)
+      Blog.Posts.invalidate_cache()
+    end)
+  end
+
+  test "returns Atom XML with correct content type", %{conn: conn} do
+    conn = get(conn, "/atom")
+
+    assert response_content_type(conn, :xml) =~ "application/atom+xml"
+    body = response(conn, 200)
+    assert body =~ "<?xml"
+    assert body =~ "<feed"
+  end
+
+  test "includes entries from posts", %{conn: conn} do
+    conn = get(conn, "/atom")
+    body = response(conn, 200)
+
+    assert body =~ "<title>Test Post</title>"
+    assert body =~ "2024-01-15_test_post"
+  end
+end

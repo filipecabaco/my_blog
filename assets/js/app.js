@@ -44,7 +44,7 @@ import Dashboard from './hook/dashboard'
 import ReadTag from './hook/read_tag'
 import { hooks as colocatedHooks } from 'phoenix-colocated/blog'
 import topbar from '../vendor/topbar'
-import './boids'
+
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
