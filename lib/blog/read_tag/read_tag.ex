@@ -2,7 +2,10 @@ defmodule Blog.ReadTag do
   use GenServer
 
   def init(args), do: {:ok, args}
-  def start_link(%{name: name, socket: socket, title: title}), do: GenServer.start_link(__MODULE__, %{title: title, color: random_rgb(), socket: socket, position: 0}, name: name)
+  def start_link(%{name: name, socket: socket, title: title}),
+    do: GenServer.start_link(__MODULE__, %{title: title, color: random_rgb(), socket: socket, position: 0}, name: name)
+
+  def via(id), do: {:via, Registry, {Blog.ReadTag.Registry, id}}
 
   def handle_call(:get_state, _, state), do: {:reply, state, state}
   def handle_call(:get_position, _, %{position: pos} = state), do: {:reply, pos, state}

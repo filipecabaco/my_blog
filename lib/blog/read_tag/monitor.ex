@@ -11,7 +11,8 @@ defmodule Blog.ReadTag.Monitor do
   end
 
   def handle_info(:clean, state) do
-    Enum.each(:global.registered_names(), fn id ->
+    Registry.select(Blog.ReadTag.Registry, [{{:"$1", :_, :_}, [], [:"$1"]}])
+    |> Enum.each(fn id ->
       case Supervisor.get_state(id) do
         %{title: title, socket: %{root_pid: root_pid, id: id}} ->
           unless Process.alive?(root_pid) do

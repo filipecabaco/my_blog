@@ -6,8 +6,22 @@ defmodule BlogWeb.PostLive.Index do
 
   @impl true
   def mount(params, _, socket) do
-    branch = Map.get(params, "branch")
-    {:ok, assign(socket, %{posts: list_post(branch), branch: branch})}
+    pr = Map.get(params, "pr")
+
+    branch =
+      case pr do
+        nil -> nil
+        pr_number -> resolve_branch(pr_number)
+      end
+
+    {:ok, assign(socket, %{posts: list_post(branch), pr: pr})}
+  end
+
+  defp resolve_branch(pr_number) do
+    case Posts.pr_branch(pr_number) do
+      {:ok, branch} -> branch
+      {:error, _} -> nil
+    end
   end
 
   @impl true
@@ -27,10 +41,11 @@ defmodule BlogWeb.PostLive.Index do
 
         <div class="post-grid">
           <%= for post <- @posts do %>
-            <% path = if @branch, do: ~p"/post/#{post.title}?branch=#{@branch}", else: ~p"/post/#{post.title}" %>
+            <% path = if @pr, do: ~p"/post/#{post.title}?pr=#{@pr}", else: ~p"/post/#{post.title}" %>
+            <% image_src = if @pr, do: "/pr/#{@pr}/images/posts/#{post.title}.png", else: "/images/posts/#{post.title}.png" %>
             <article class="post-card">
               <.link navigate={path} class="post-card-link">
-                <img src={"/images/posts/#{post.title}.png"} alt={post.label} class="post-card-image" loading="lazy" />
+                <img src={image_src} alt={post.label} class="post-card-image" loading="lazy" />
                 <div class="post-card-content">
                   <h2 class="post-card-title">{post.label}</h2>
                   <p class="post-card-description">{post.description}</p>

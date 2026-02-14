@@ -4,16 +4,16 @@ defmodule Blog.ReadTagTest do
   alias Blog.ReadTag
 
   setup do
-    name = :"test_tag_#{System.unique_integer()}"
-    socket = %{id: "test-socket-id", root_pid: self()}
+    id = "test-socket-#{System.unique_integer([:positive])}"
+    socket = %{id: id, root_pid: self()}
 
-    {:ok, pid} = ReadTag.start_link(%{name: name, socket: socket, title: "test_post"})
+    {:ok, pid} = ReadTag.start_link(%{name: ReadTag.via(id), socket: socket, title: "test_post"})
 
     on_exit(fn ->
       if Process.alive?(pid), do: GenServer.stop(pid)
     end)
 
-    %{pid: pid, name: name}
+    %{pid: pid, id: id}
   end
 
   test "stores initial state with title, socket, and position", %{pid: pid} do
@@ -21,7 +21,6 @@ defmodule Blog.ReadTagTest do
 
     assert state.title == "test_post"
     assert state.position == 0
-    assert state.socket.id == "test-socket-id"
     assert is_binary(state.color)
   end
 
@@ -60,16 +59,12 @@ defmodule Blog.ReadTag.SupervisorTest do
       :exit, _ -> :ok
     end
 
+    assert Registry.lookup(Blog.ReadTag.Registry, id) != []
     id
   end
 
   defp cleanup(id) do
-    case :global.whereis_name(id) do
-      :undefined -> :ok
-      pid when is_pid(pid) -> GenServer.stop(pid)
-    end
-  catch
-    :exit, _ -> :ok
+    Supervisor.terminate(id)
   end
 
   test "get_state returns nil for unknown id" do
@@ -162,6 +157,16 @@ defmodule Blog.ReadTag.MonitorTest do
 
   alias Blog.ReadTag.Supervisor
 
+  defp start_tag_for_monitor(id, socket) do
+    try do
+      Supervisor.start(socket, "test_post")
+    catch
+      :exit, _ -> :ok
+    end
+
+    assert Registry.lookup(Blog.ReadTag.Registry, id) != []
+  end
+
   test "clean removes tags with dead root processes" do
     id = "monitor-dead-#{System.unique_integer()}"
 
@@ -169,9 +174,7 @@ defmodule Blog.ReadTag.MonitorTest do
     Process.sleep(10)
     refute Process.alive?(dead_pid)
 
-    socket = %{id: id, root_pid: dead_pid}
-    Supervisor.start(socket, "test_post")
-    Process.sleep(10)
+    start_tag_for_monitor(id, %{id: id, root_pid: dead_pid})
 
     assert Supervisor.get_state(id) != nil
 
@@ -184,9 +187,7 @@ defmodule Blog.ReadTag.MonitorTest do
   test "clean keeps tags with alive root processes" do
     id = "monitor-alive-#{System.unique_integer()}"
 
-    socket = %{id: id, root_pid: self()}
-    Supervisor.start(socket, "test_post")
-    Process.sleep(10)
+    start_tag_for_monitor(id, %{id: id, root_pid: self()})
 
     send(Blog.ReadTag.Monitor, :clean)
     Process.sleep(100)

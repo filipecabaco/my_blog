@@ -20,6 +20,14 @@ defmodule BlogWeb.PostLiveTest do
         "/raw/test.md" ->
           Plug.Conn.send_resp(conn, 200, @post_content)
 
+        "/repos/filipecabaco/my_blog/pulls/42" ->
+          Req.Test.json(conn, %{"head" => %{"ref" => "draft/test-branch"}})
+
+        "/filipecabaco/my_blog/draft/test-branch/priv/static/images/posts/2024-01-15_test_post.png" ->
+          conn
+          |> Plug.Conn.put_resp_content_type("image/png")
+          |> Plug.Conn.send_resp(200, "fake-png-data")
+
         _ ->
           Req.Test.json(conn, %{"message" => "Not Found"})
       end
@@ -65,6 +73,20 @@ defmodule BlogWeb.PostLiveTest do
 
       assert html =~ "filipecabaco.com"
       assert html =~ "hero-title"
+    end
+  end
+
+  describe "Index with PR preview" do
+    test "uses PR image proxy for card images", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/?pr=42")
+
+      assert html =~ "/pr/42/images/posts/2024-01-15_test_post.png"
+    end
+
+    test "links to posts with pr param", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/?pr=42")
+
+      assert html =~ "?pr=42"
     end
   end
 
@@ -180,6 +202,35 @@ defmodule BlogWeb.PostLiveTest do
 
       render_hook(view, "scroll_position", %{"position" => 200, "title" => "2024-01-15_test_post"})
       assert render(view) =~ "readers"
+    end
+
+    test "does not render tags line as text in post body", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      refute html =~ "tags: elixir, phoenix"
+      assert html =~ "tag-pill"
+    end
+
+    test "renders back link with pr param when previewing PR", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post?pr=42")
+
+      assert html =~ "?pr=42"
+      assert html =~ "Back to posts"
+    end
+  end
+
+  describe "PR image proxy" do
+    test "proxies image from PR branch", %{conn: conn} do
+      conn = get(conn, "/pr/42/images/posts/2024-01-15_test_post.png")
+
+      assert conn.status == 200
+      assert conn.resp_body == "fake-png-data"
+    end
+
+    test "returns 404 for invalid PR", %{conn: conn} do
+      conn = get(conn, "/pr/999/images/posts/nonexistent.png")
+
+      assert conn.status == 404
     end
   end
 end

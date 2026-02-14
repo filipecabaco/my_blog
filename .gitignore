@@ -35,3 +35,6 @@ npm-debug.log
 # Environment variables
 .env
 .env.local
+
+# Claude Code local settings (user-specific permissions)
+.claude/settings.local.json

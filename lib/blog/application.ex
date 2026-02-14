@@ -11,6 +11,7 @@ defmodule Blog.Application do
       BlogWeb.Endpoint,
       Blog.Posts,
       {Blog.Statistics, "/tmp/blog/"},
+      {Registry, keys: :unique, name: Blog.ReadTag.Registry},
       Blog.ReadTag.Supervisor,
       Blog.ReadTag.Monitor
     ]

@@ -53,6 +53,24 @@ defmodule Blog.Posts do
 
   def get_post(title, branch), do: fetch_post(title, branch)
 
+  @spec pr_branch(String.t() | integer()) :: {:ok, String.t()} | {:error, String.t()}
+  def pr_branch(pr_number) do
+    url = "https://api.github.com/repos/filipecabaco/my_blog/pulls/#{pr_number}"
+
+    case req_get(url) do
+      {:ok, %{body: %{"head" => %{"ref" => branch}}}} ->
+        {:ok, branch}
+
+      {:ok, %{body: %{"message" => message}}} ->
+        Logger.warning("Failed to resolve PR ##{pr_number}: #{message}")
+        {:error, message}
+
+      {:error, reason} ->
+        Logger.error("Failed to resolve PR ##{pr_number}: #{inspect(reason)}")
+        {:error, "Failed to resolve PR"}
+    end
+  end
+
   def invalidate_cache do
     :ets.delete_all_objects(@table)
     :ok
@@ -90,7 +108,9 @@ defmodule Blog.Posts do
 
   @spec parse(String.t()) :: String.t() | {:error, String.t()}
   def parse(post) do
-    case Earmark.as_html(post) do
+    stripped = Regex.replace(~r/^tags:\s*.+$/m, post, "")
+
+    case Earmark.as_html(stripped) do
       {:ok, html, _warnings} ->
         html
 

@@ -16,7 +16,17 @@ defmodule BlogWeb.PostLive.Show do
 
   @impl true
   def handle_params(%{"title" => title} = params, _, socket) do
-    branch = Map.get(params, "branch")
+    pr = Map.get(params, "pr")
+
+    branch =
+      case pr do
+        nil -> nil
+        pr_number ->
+          case Posts.pr_branch(pr_number) do
+            {:ok, branch} -> branch
+            {:error, _} -> nil
+          end
+      end
 
     case Posts.get_post(title, branch) do
       {:error, reason} ->
@@ -25,6 +35,7 @@ defmodule BlogWeb.PostLive.Show do
          |> put_flash(:error, "Failed to load post: #{reason}")
          |> assign(:page_title, Phoenix.Naming.humanize(title))
          |> assign(:title, title)
+         |> assign(:pr, pr)
          |> assign(:description, "")
          |> assign(:tags, [])
          |> assign(:post, "<p>Post not found or failed to load.</p>")}
@@ -40,6 +51,7 @@ defmodule BlogWeb.PostLive.Show do
          socket
          |> assign(:page_title, Phoenix.Naming.humanize(title))
          |> assign(:title, title)
+         |> assign(:pr, pr)
          |> assign(:description, Posts.description(post))
          |> assign(:tags, Posts.tags(post))
          |> assign(:post, parsed_post)}
@@ -109,7 +121,7 @@ defmodule BlogWeb.PostLive.Show do
       {raw(@post)}
 
       <div class="post-footer">
-        <.link navigate={~p"/"}>Back to posts</.link>
+        <.link navigate={if @pr, do: ~p"/?pr=#{@pr}", else: ~p"/"}>Back to posts</.link>
         <span>{@counter} readers</span>
       </div>
     </main>
