@@ -16,7 +16,7 @@ defmodule Blog.Feed do
   end
 
   defp build_entity({tag, attributes, content}, acc) when is_list(content),
-    do: [{tag, prepare_attributes(attributes), Enum.reduce(content, [], &build_entity/2)}] ++ acc
+    do: acc ++ [{tag, prepare_attributes(attributes), Enum.reduce(content, [], &build_entity/2)}]
 
   defp build_entity({tag, attributes, nil}, acc),
     do: acc ++ [{tag, prepare_attributes(attributes), ~c""}]
