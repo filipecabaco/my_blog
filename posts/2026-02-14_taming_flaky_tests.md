@@ -1,164 +1,149 @@
 # Taming Flaky Tests
 tags: backend
 
-If you've ever stared at a CI pipeline going red for no apparent reason, only to hit "rerun" and watch it go green, you know the pain. Flaky tests are one of those problems that seem minor until they erode all trust in your test suite. In this post I'll share some patterns I've found useful for making async and concurrent tests actually reliable.
+There's nothing quite like watching your CI go red, hitting rerun, and watching it go green. That specific combination of relief and dread is what got me to finally sit down and deal with flaky tests in a real-time system I work on. This post is about what I found and how we fixed it.
 
-## The Anatomy of a Flaky Test
+All the patterns here come from real work on [Supabase Realtime](https://github.com/supabase/realtime), an Elixir system that manages WebSocket connections to Postgres. The test suite runs against real Docker containers spinning up actual Postgres instances, which makes it powerful but also a minefield for flakiness.
 
-Most flaky tests come from one of three places: timing assumptions, shared state, or ordering dependencies. Let's break them down.
+## The Usual Suspects
+
+Most of our flaky tests came from three places: timing assumptions, shared state, and resource contention. Let me show you the real examples.
 
 ### Timing Assumptions
 
-This is the biggest offender in async code. You write something like this:
+This was the biggest offender. We had tests that used `Process.sleep/1` to wait for async operations:
 
 ```elixir
-test "process sends message after initialization" do
-  start_supervised!(MyWorker)
-  assert_received :ready
+test "set_position updates the position of a registered tag" do
+  start_tag(id, "my_post")
+  Supervisor.set_position(id, 150)
+  Process.sleep(10)
+  assert Supervisor.get_state(id).position == 150
 end
 ```
 
-The problem? `start_supervised!/1` returns as soon as the process starts, but `:ready` might be sent in `handle_continue/2` which runs asynchronously. On your machine it's fast enough. On CI with limited resources, it's a coin flip 😅
+That `Process.sleep(10)` works fine on a beefy dev machine but on CI with limited resources? Coin flip. The cast might not have been processed in 10 milliseconds 😅
 
-The fix is straightforward - use `assert_receive/2` with an explicit timeout instead of `assert_received/1`:
-
-```elixir
-test "process sends message after initialization" do
-  start_supervised!(MyWorker)
-  assert_receive :ready, 1_000
-end
-```
-
-`assert_receive` will wait up to the timeout for the message to arrive. `assert_received` only checks the mailbox at that exact instant.
-
-### Shared State
-
-Async test suites are great for speed but brutal when tests share state. ETS tables, named processes, application env - anything global becomes a potential race condition.
+The fix is to either use `assert_receive` with a proper timeout when you can, or to build polling helpers for cases where you're waiting on process state:
 
 ```elixir
-# This test will randomly fail when run with async: true
-test "configuration changes take effect" do
-  Application.put_env(:my_app, :feature_flag, true)
-  assert MyApp.feature_enabled?()
-  Application.put_env(:my_app, :feature_flag, false)
-end
-```
+defp eventually(fun, opts \\ []) do
+  timeout = Keyword.get(opts, :timeout, 1_000)
+  interval = Keyword.get(opts, :interval, 50)
+  deadline = System.monotonic_time(:millisecond) + timeout
 
-Two instances of this test running simultaneously will stomp on each other. The solution: isolate state per test. Pass configuration explicitly instead of relying on global state:
-
-```elixir
-test "configuration changes take effect" do
-  assert MyApp.feature_enabled?(feature_flag: true)
-  refute MyApp.feature_enabled?(feature_flag: false)
-end
-```
-
-If you absolutely need global state, drop `async: true` for that module. It's better to have a slower test that's reliable than a fast one that's a liar.
-
-### Ordering Dependencies
-
-This one is sneaky. Test A creates some data, test B happens to run after A and implicitly depends on that data. Works fine until ExUnit shuffles the order.
-
-```elixir
-# test A
-test "creates a user" do
-  {:ok, _user} = Accounts.create_user(%{name: "test"})
-  assert Accounts.count_users() == 1
+  do_eventually(fun, interval, deadline)
 end
 
-# test B - implicitly depends on A having run first
-test "lists all users" do
-  users = Accounts.list_users()
-  assert length(users) == 1
-end
-```
-
-Each test should set up its own world. If test B needs a user, it should create one. The `setup` block is your friend here.
-
-## Strategies That Actually Work
-
-### Make Async Boundaries Explicit
-
-Whenever a function kicks off an async operation, give callers a way to know when it's done. This is one of the best investments you can make for testability:
-
-```elixir
-defmodule MyWorker do
-  use GenServer
-
-  def start_link(opts) do
-    caller = Keyword.get(opts, :caller)
-    GenServer.start_link(__MODULE__, %{caller: caller})
-  end
-
-  def init(state) do
-    {:ok, state, {:continue, :setup}}
-  end
-
-  def handle_continue(:setup, %{caller: caller} = state) do
-    # do the actual work...
-    if caller, do: send(caller, :ready)
-    {:noreply, state}
+defp do_eventually(fun, interval, deadline) do
+  case fun.() do
+    true -> :ok
+    false ->
+      if System.monotonic_time(:millisecond) < deadline do
+        Process.sleep(interval)
+        do_eventually(fun, interval, deadline)
+      else
+        flunk("condition not met within timeout")
+      end
   end
 end
 ```
 
-Now your tests can reliably wait:
+Now instead of hoping 10ms is enough, you poll until the condition is true or a real timeout expires.
+
+### Shared State and Global Registration
+
+We had tests that registered processes globally and then wondered why they clashed:
 
 ```elixir
-test "worker initializes properly" do
-  start_supervised!({MyWorker, caller: self()})
-  assert_receive :ready, 5_000
+test "start registers a read tag and get_state returns it" do
+  id = "sup-start-#{System.unique_integer()}"
+  start_tag(id, "my_post")
+  state = Supervisor.get_state(id)
+  assert state.title == "my_post"
+  cleanup(id)
 end
 ```
 
-### Use Sandbox Patterns
+The `System.unique_integer()` helps avoid name collisions, but when tests run with `async: false` on the same named Registry, global registration can still race. We also had tests that relied on `Application.put_env` which is global state that any concurrent test can stomp on.
 
-If you're using Ecto, you already know `Ecto.Adapters.SQL.Sandbox`. The same pattern works for other shared resources. Wrap them so each test gets its own isolated instance:
+The solution is isolation. Each test gets its own world:
 
 ```elixir
 setup do
-  cache = start_supervised!({MyCache, name: :"cache_#{System.unique_integer()}"})
-  %{cache: cache}
-end
+  Blog.Posts.invalidate_cache()
+  Application.put_env(:blog, :req_options, plug: {Req.Test, __MODULE__})
 
-test "caching works", %{cache: cache} do
-  MyCache.put(cache, :key, "value")
-  assert MyCache.get(cache, :key) == "value"
+  on_exit(fn ->
+    Application.delete_env(:blog, :req_options)
+    Blog.Posts.invalidate_cache()
+  end)
 end
 ```
 
-The trick is using unique names per test. No shared state, no races.
+The `on_exit` callback is crucial. Without it, one test's state leaks into the next.
 
-### Don't Retry, Fix
+### Resource Contention in CI
 
-This is the hardest one to follow through on 🧐 When a test flakes, the temptation is to add a retry mechanism or increase timeouts. Resist. Every retry is a lie you're telling yourself about the reliability of your code.
+This is the one that really bit us. Our test suite spins up Docker containers with real Postgres instances. On CI, pulling Docker images and starting containers takes time and resources. Tests would fail not because of bugs but because the database wasn't ready yet.
 
-Instead, when a test flakes:
+The fix had two parts. First, cache Docker images in CI so they don't need to be pulled every run:
 
-1. Reproduce it locally (run the test in a loop: `for i in {1..100}; do mix test test/my_test.exs; done`)
-2. Identify the category (timing, state, ordering)
-3. Apply the appropriate isolation pattern
-4. Verify by running in a loop again
+```yaml
+- name: Cache Docker images
+  uses: actions/cache@v5
+  id: docker-cache
+  with:
+    path: /tmp/docker-images
+    key: docker-images-zstd-${{ env.POSTGRES_IMAGE }}
+- name: Load Docker images from cache
+  if: steps.docker-cache.outputs.cache-hit == 'true'
+  run: zstd -d --stdout /tmp/docker-images/postgres.tar.zst | docker image load
+```
 
-If you can't reproduce it locally, it's almost certainly a resource contention issue. CI runners have less CPU, less memory, and more noisy neighbors. Your test is probably making a timing assumption that only holds with fast hardware.
+Second, partition the tests so they don't fight over resources. Each partition gets its own database and port:
+
+```elixir
+partition = System.get_env("MIX_TEST_PARTITION")
+
+config :realtime, repo,
+  database: "realtime_test#{partition}",
+  pool: Ecto.Adapters.SQL.Sandbox
+
+http_port = if partition, do: 4002 + String.to_integer(partition), else: 4002
+
+config :realtime, RealtimeWeb.Endpoint,
+  http: [port: http_port],
+  server: true
+```
+
+Even the RPC ports needed partitioning to avoid collisions:
+
+```elixir
+gen_rpc_offset = if partition, do: String.to_integer(partition) * 10, else: 0
+
+config :gen_rpc,
+  tcp_server_port: 5969 + gen_rpc_offset,
+  tcp_client_port: 5970 + gen_rpc_offset
+```
 
 ## The Compound Effect
 
-Here's the thing about flaky tests that people don't talk about enough - the damage is exponential. One flaky test in a suite of 500? Annoying but manageable. Ten flaky tests? Now your CI pipeline fails ~30% of the time purely from test noise. People start ignoring failures. Real bugs slip through because "it's probably just the flaky test". The whole point of having tests collapses.
+Here's what people don't talk about enough. One flaky test in a suite of 500 is annoying. Ten flaky tests means your CI fails roughly 30% of the time from pure noise. People start hitting rerun reflexively. Real bugs slip through because "it's probably just the flaky test". The whole point of having tests collapses.
 
-Fix flaky tests the moment you spot them. It's never "just" a flaky test.
+After partitioning our CI into 4 parallel jobs and fixing the timing issues, our false failure rate dropped dramatically. And the suite actually runs faster because the partitions execute in parallel 🧐
 
 ## Caveats
 
-I should be honest here - some async operations are genuinely hard to test deterministically. External services, time-dependent logic, network calls. For those, mocking the boundary is the right call. The point isn't "never mock" but "don't mock to hide flakiness in your own code".
+Some async operations are genuinely hard to test deterministically. External services, time-dependent logic, network calls. For those, mocking the boundary with something like `Req.Test` stubs is the right call. The point isn't "never mock" but "don't mock to hide flakiness in your own code".
 
-Also, there are legitimate cases where `async: false` is the right answer. If your tests need to share a resource that can't be sandboxed, sequential execution is better than fragile parallelism ❤️
+Also, `async: false` is sometimes the honest answer. If your tests need a shared resource that can't be sandboxed, sequential execution is better than fragile parallelism.
 
 ## Conclusion
 
-- Flaky tests almost always come from timing, shared state, or ordering assumptions
-- Use `assert_receive` with explicit timeouts instead of `assert_received` for async code
-- Isolate state per test using unique names and explicit dependencies
-- Give async operations an explicit "I'm done" signal for testability
-- Fix flaky tests immediately - the compound effect of ignoring them destroys trust in your suite
-- Retries are band-aids, not solutions
+- Most flaky tests come from timing assumptions, shared state, or resource contention
+- Replace `Process.sleep` with polling helpers or `assert_receive` with real timeouts
+- Isolate test state with unique names and `on_exit` cleanup
+- Partition CI runs so tests don't fight over databases and ports
+- Cache Docker images in CI to avoid pull-time variance
+- Fix flaky tests the moment you spot them - the compound effect is brutal
