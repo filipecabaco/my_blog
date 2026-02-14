@@ -129,5 +129,57 @@ defmodule BlogWeb.PostLiveTest do
       send(view.pid, %{topic: "unknown", event: "unknown"})
       assert render(view) =~ "readers"
     end
+
+    test "handles new_tag broadcast for same post", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      BlogWeb.Endpoint.broadcast("read_tag", "new_tag", %{id: "other-socket", title: "2024-01-15_test_post"})
+      assert render(view) =~ "read-tag"
+    end
+
+    test "ignores new_tag broadcast from self", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      BlogWeb.Endpoint.broadcast("read_tag", "new_tag", %{id: view.id, title: "2024-01-15_test_post"})
+      assert render(view) =~ "readers"
+    end
+
+    test "handles delete_tag broadcast for same post", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      BlogWeb.Endpoint.broadcast("read_tag", "delete_tag", %{id: "other-socket", title: "2024-01-15_test_post"})
+      assert render(view) =~ "readers"
+    end
+
+    test "handles position_update broadcast from other user", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      BlogWeb.Endpoint.broadcast("read_tag", "position_update", %{
+        id: "other-socket",
+        position: 100,
+        title: "2024-01-15_test_post"
+      })
+
+      assert render(view) =~ "readers"
+    end
+
+    test "ignores position_update broadcast from self", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      BlogWeb.Endpoint.broadcast("read_tag", "position_update", %{
+        id: view.id,
+        position: 50,
+        title: "2024-01-15_test_post"
+      })
+
+      assert render(view) =~ "readers"
+    end
+
+    test "handles scroll_position event", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
+
+      render_hook(view, "scroll_position", %{"position" => 200, "title" => "2024-01-15_test_post"})
+      assert render(view) =~ "readers"
+    end
   end
 end

@@ -11,7 +11,7 @@ import Config
 config :blog, BlogWeb.Endpoint,
   adapter: Bandit.PhoenixAdapter,
   url: [host: "localhost"],
-  render_errors: [view: BlogWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [formats: [html: BlogWeb.ErrorHTML], layout: false],
   pubsub_server: Blog.PubSub,
   live_view: [signing_salt: "OfNHm0M8"]
 

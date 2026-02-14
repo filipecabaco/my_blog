@@ -15,7 +15,7 @@ defmodule Blog.MixProject do
       test_coverage: [
         summary: [threshold: 84],
         ignore_modules: [
-          BlogWeb.ErrorView,
+          BlogWeb.ErrorHTML,
           BlogWeb.Router.Helpers,
           BlogWeb
         ]
@@ -55,7 +55,8 @@ defmodule Blog.MixProject do
       {:bandit, "~> 1.6"},
       {:earmark, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:vega_lite, "~> 0.1"}
+      {:vega_lite, "~> 0.1"},
+      {:castore, "~> 1.0"}
     ]
   end
 
