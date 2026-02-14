@@ -1,7 +1,7 @@
 # When Migrations Go Wrong
 tags: backend, data
 
-That moment when you realize your migration count in the application doesn't match what's actually in the database. It happened to us on a real-time system managing thousands of tenant databases and the fix turned out to be more interesting than the bug. This post is about migrations going sideways and what to do about it.
+A tenant restored their database from a backup. Everything looked fine until new WebSocket connections started failing silently. The schema was missing tables that our application was certain had been migrated. The cached migration counter said "all good" while the database told a different story.
 
 The code here comes from [Supabase Realtime](https://github.com/supabase/realtime), where each tenant gets their own Postgres schema with migrations managed by the application itself. When you're running migrations across thousands of databases, the things that can go wrong multiply fast.
 
@@ -21,7 +21,7 @@ defstruct tenant_id: nil,
           migrations_ran_on_database: 0
 ```
 
-Simple enough. Except... what happens when a tenant restores their database from a backup? The database rolls back to an earlier state but our cached `migrations_ran` counter still says the latest value. Now we think all migrations have been applied when half of them are actually missing 😅
+Simple enough. Except... what happens when a tenant restores their database from a backup? The database rolls back to an earlier state but our cached `migrations_ran` counter still says the latest value. Now we think all migrations have been applied when half of them are actually missing.
 
 ## The Fix: Migration Reconciliation
 
@@ -79,18 +79,7 @@ defmodule Realtime.Tenants.Connect.ReconcileMigrations do
 end
 ```
 
-This slots into the existing connection pipeline as a new pipe:
-
-```elixir
-pipes = [
-  GetTenant,
-  CheckConnection,
-  ReconcileMigrations,
-  RegisterProcess
-]
-```
-
-If there's a mismatch, we log a warning and update the cached count to match reality. The next time migrations run, they'll apply the ones that are actually missing instead of skipping them.
+This slots into the existing tenant connection pipeline between `CheckConnection` and `RegisterProcess`. If there's a mismatch, we log a warning and update the cached count to match reality. The next time migrations run, they'll apply the ones that are actually missing instead of skipping them.
 
 ## Squashing Old Migrations
 
@@ -139,7 +128,18 @@ test "updates tenant when database has fewer migrations than cached count", %{te
 end
 ```
 
-The second test simulates exactly the database restore scenario. The cached count says we've run all migrations, but the database only has some of them. After reconciliation, the counter is corrected and the missing migrations will be applied on the next run 🧐
+The second test simulates exactly the database restore scenario. The cached count says we've run all migrations, but the database only has some of them. After reconciliation, the counter is corrected and the missing migrations will be applied on the next run.
+
+There's a third case worth covering: what if the database somehow has more migrations than the cached count? This can happen with manual interventions or migrations applied by a different deploy:
+
+```elixir
+test "updates tenant when database has more migrations than cached count", %{tenant: tenant} do
+  extra_count = tenant.migrations_ran + 3
+  acc = %{tenant: tenant, migrations_ran_on_database: extra_count}
+  assert {:ok, %{tenant: updated_tenant}} = ReconcileMigrations.run(acc)
+  assert updated_tenant.migrations_ran == extra_count
+end
+```
 
 ## Caveats
 
