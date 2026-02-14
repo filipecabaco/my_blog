@@ -63,6 +63,34 @@
     <.live_title prefix="Filipe Cabaco Blog ">
       <%= assigns[:page_title] || "" %>
     </.live_title>
+    <%= if assigns[:title] do %>
+      <script type="application/ld+json">
+        <%= raw(Jason.encode!(%{
+          "@context" => "https://schema.org",
+          "@type" => "BlogPosting",
+          "headline" => assigns[:page_title] || "Filipe Cabaco Blog",
+          "description" => assigns[:description] || "",
+          "image" => BlogWeb.Endpoint.url() <> "/images/posts/#{@title}.png",
+          "url" => BlogWeb.Endpoint.url() <> "/post/#{@title}",
+          "datePublished" => assigns[:published_date],
+          "author" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com"},
+          "publisher" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com", "logo" => %{"@type" => "ImageObject", "url" => BlogWeb.Endpoint.url() <> "/images/logo.png"}},
+          "mainEntityOfPage" => %{"@type" => "WebPage", "@id" => BlogWeb.Endpoint.url() <> "/post/#{@title}"},
+          "keywords" => Enum.join(assigns[:tags] || [], ", ")
+        })) %>
+      </script>
+    <% else %>
+      <script type="application/ld+json">
+        <%= raw(Jason.encode!(%{
+          "@context" => "https://schema.org",
+          "@type" => "WebSite",
+          "name" => "Filipe Cabaco Blog",
+          "description" => "Building things, breaking things, writing about it",
+          "url" => BlogWeb.Endpoint.url()
+        })) %>
+      </script>
+    <% end %>
+
     <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
   </head>

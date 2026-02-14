@@ -21,6 +21,7 @@ defmodule BlogWeb.Router do
     live("/post/:title", PostLive.Show, :show)
     live("/open_dashboard", OpenDashboardLive.Index, :index)
     get("/atom", FeedController, :index)
+    get("/sitemap.xml", SitemapController, :index)
   end
 
   # Other scopes may use custom stacks.
