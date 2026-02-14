@@ -14,6 +14,8 @@ metadata:
 
 Every blog post requires a card image. Images are **illustration-only** (no title, no tags — those are shown in the HTML card below the image). Generated as SVG then converted to PNG.
 
+**Model guidance**: When invoked as part of a larger workflow, use `opus` for SVG generation — this is creative/implementation work.
+
 ## Required: Generate Image for Every New Post
 
 When a new blog post is created, you MUST:

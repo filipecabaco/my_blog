@@ -20,7 +20,9 @@ defmodule BlogWeb.PostLive.Show do
 
     branch =
       case pr do
-        nil -> nil
+        nil ->
+          nil
+
         pr_number ->
           case Posts.pr_branch(pr_number) do
             {:ok, branch} -> branch

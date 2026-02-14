@@ -131,7 +131,7 @@ defmodule BlogWeb.PostLiveTest do
 
       assert html =~ ~s(application/ld+json)
       assert html =~ ~s("@type":"BlogPosting")
-      assert html =~ ~s("headline":"Test Post")
+      assert html =~ ~s("headline":"2024-01-15 test post")
       assert html =~ ~s("datePublished":"2024-01-15T00:00:00+00:00")
       assert html =~ ~s("name":"Filipe Cabaco")
       assert html =~ ~s("keywords":"elixir, phoenix")
