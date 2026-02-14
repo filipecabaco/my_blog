@@ -1,171 +1,122 @@
 ---
 name: image-generation-strategy
-description: Automated image generation for blog posts using strategy pattern based on tags (backend, web, real-time, frontend, data-visualization, machine-learning, applications, data) and content analysis. Selects appropriate approach (code screenshots, charts, diagrams, terminal output, UI screenshots, typographic cards) and handles caching, metadata overrides, and homepage integration.
+description: >
+  Every blog post MUST have a generated card image at priv/static/images/posts/{slug}.png.
+  Images are topic-based SVG illustrations converted to PNG via rsvg-convert, following the GitHub dark theme.
+  When creating a new post, always generate its image. When updating tags or title, regenerate.
 license: MIT
 metadata:
   author: filipecabaco
-  version: "1.0.0"
+  version: "3.1.0"
 ---
 
 # Image Generation Strategy
 
-Flexible image generation for blog posts that selects the appropriate visual approach based on post content and tags.
+Every blog post requires a card image. Images are **illustration-only** (no title, no tags — those are shown in the HTML card below the image). Generated as SVG then converted to PNG.
 
-## Strategy Selection
+## Required: Generate Image for Every New Post
 
-**Tag-based mapping:**
+When a new blog post is created, you MUST:
+1. Read the post title, tags, and content to understand the topic
+2. Choose an illustration style based on tags (see mapping below)
+3. Generate an SVG with **only the illustration and accent line** (no title text, no tag pills)
+4. Convert to PNG at `priv/static/images/posts/{slug}.png`
+5. The slug is the filename without `.md` (e.g., `2022-07-16_making_my_blog`)
 
-| Tags | Strategy | Output |
-|------|----------|--------|
-| `backend`, `web`, `real-time` | code_screenshot | Syntax-highlighted Elixir/Phoenix code |
-| `data-visualization` | chart_preview | Vega-lite/graph rendering |
-| `machine-learning` | architecture_diagram | Model flow visualization |
-| `applications` | ui_screenshot | Application UI mockup |
-| `frontend` | component_visual | Browser/component preview |
-| `data` | data_flow_diagram | Pipeline visualization |
-| _fallback_ | typographic_card | Title + Tags + Description |
+## File Locations
 
-## Post Metadata Overrides
+| What | Path |
+|------|------|
+| Generated PNGs | `priv/static/images/posts/{slug}.png` |
+| Image in template | `"/images/posts/#{post.title}.png"` (in index.ex) |
+| CSS class | `.post-card-image` |
 
-Add to post frontmatter:
+## Visual Style (GitHub Dark Theme)
 
-```markdown
-tags: backend, web
-image_strategy: code_screenshot
-image_hint: lines 45-60
-image_source: /images/custom-preview.png
-image_caption: Alt text for accessibility
+All images are **1200x630** and strictly monochromatic:
+
+| Element | Color |
+|---------|-------|
+| Background | `#0d1117` |
+| Panel/card fills | `#161b22` |
+| Tertiary fills | `#1c2128` |
+| Primary text (title) | `#e6edf3` |
+| Secondary text (labels) | `#8b949e` |
+| Muted elements | `#6e7681` |
+| Borders/strokes | `#30363d` |
+| Accent (bottom line) | `#58a6ff` at 30% opacity |
+| Tag pill bg | `#1c2128` with `#30363d` border |
+
+**Rules:**
+- Monospace font everywhere (monospace in SVG)
+- Monochromatic only - greys and one blue accent
+- No neon, no gradients, no bright colors, no emoji
+- Abstract/geometric illustrations, not code screenshots
+- 8px radius on panels, 4px on pills, 6-10px on windows
+
+## Tag-to-Illustration Mapping
+
+Choose illustration based on the post's primary tags:
+
+| Tags | Illustration | Visual Elements |
+|------|-------------|-----------------|
+| `backend`, `web` | **Browser window** | Window chrome with dots, URL bar, content lines, code block area, card grid |
+| `real-time` | **Connected clients** | Central PubSub node with pulse rings, 4 browser windows connected via dashed lines, live dots on connections |
+| `data-visualization` | **Network graph** | Nodes and edges, central hub, leaf nodes at different levels, labeled connections |
+| `machine-learning` | **Neural network** | Input/hidden/output layers as circles, connection lines between layers, "input"/"output" labels |
+| `applications` | **Desktop window** | Native window frame with title bar, editor area with text lines, sidebar panel with suggestion items |
+| `data` | **Feed/stream** | RSS-style icon (arcs + dot), feed entry cards flowing from source, dashed connecting lines |
+| `backend` (rate limiting) | **Funnel/gate** | Many dots on left (requests), funnel/gate in center with "429", few dots passing through on right, clock |
+| `backend` (statistics) | **Bar chart** | Y/X axes, bars of varying height, dashed grid lines, counter badge |
+| _fallback_ | **Typographic card** | Large title, tag pills, abstract geometric shapes |
+
+## SVG Layout Template
+
+```
+┌──────────────────────────────────────────┐
+│                                          │
+│     [Topic illustration]                 │
+│     (fills entire 1200x630 canvas)       │
+│                                          │
+│                                          │
+│                                          │
+│  ════════════════════ accent (y=626)     │
+└──────────────────────────────────────────┘
 ```
 
-**Fields:**
-- `image_strategy`: Override automatic selection
-- `image_hint`: Line range, block index, or selection detail
-- `image_source`: Manual image path (bypass generation)
-- `image_caption`: Accessibility alt text
+The illustration fills the full image. Only the accent line at the bottom is added. **Do NOT include title text or tag pills** — those are rendered in the HTML card below the image.
 
-## Implementation Structure
+## Generation Process
 
-```elixir
-defmodule Blog.Images do
-  def generate_for_post(post_content, post_title) do
-    strategy = select_strategy(post_content)
-    generate(strategy, post_content, post_title)
-  end
-
-  defp select_strategy(%{tags: tags, metadata: metadata}) do
-    # 1. Check explicit override in metadata
-    # 2. Apply tag-based rules
-    # 3. Fallback to typographic
-  end
-
-  # Strategy implementations
-  defp generate(:code_screenshot, post, title)
-  defp generate(:chart_preview, post, title)
-  defp generate(:architecture_diagram, post, title)
-  defp generate(:terminal_output, post, title)
-  defp generate(:ui_screenshot, post, title)
-  defp generate(:typographic_card, post, title)
-end
+```bash
+# 1. Write SVG to priv/static/images/posts/{slug}.svg
+# 2. Convert: rsvg-convert {slug}.svg -o {slug}.png -w 1200 -h 630
+# 3. Delete the SVG (keep only PNG)
 ```
 
-## Strategy Details
+### Accent Line
 
-### Code Screenshots
-**For:** backend, web, real-time tags
-**Extract:** First meaningful code block from markdown
-**Tools:** Carbon API, Puppeteer/Playwright
-**Style:** Dark theme, monospace (JetBrains Mono/Fira Code), tag pills, title overlay
+- Full-width rect at y=626, height=4, fill=#58a6ff, opacity=0.3
 
-### Chart Preview
-**For:** data-visualization tag
-**Extract:** Vega-lite spec from post
-**Tools:** Vix (ImageMagick bindings)
-**Style:** Clean background, chart focal point, title + description
+## Illustration Guidelines
 
-### Architecture/Flow Diagrams
-**For:** machine-learning, data, backend (no code)
-**Extract:** Mermaid blocks from markdown
-**Tools:** Mermaid CLI
-**Style:** Clean rendering, monospace labels, tag indicators
+When drawing SVG illustrations:
+- Use **geometric shapes** (circles, rects, lines) - no complex paths
+- Layer opacity for depth (0.3-0.8 range)
+- Dashed lines (`stroke-dasharray="6,4"`) for connections/data flow
+- Small circles (r=3-6) as live indicator dots
+- Window chrome: rounded rect + 3 dots at top-left + title bar
+- Minimal detail - suggest the concept, don't overload
+- Center the illustration horizontally
 
-### Terminal Output
-**For:** backend, applications (CLI)
-**Extract:** Terminal examples from post
-**Tools:** Asciinema, SVG terminal generators
-**Style:** Dark bg, green/white text, monospace, prompt indicators
+## When to Regenerate
 
-### UI Screenshots
-**For:** applications, frontend
-**Source:** Manual screenshots, Puppeteer captures, design tool exports
-**Style:** Browser chrome/app window, shadow effects, tag overlay
-
-### Typographic Cards (Fallback)
-**For:** Any post without specific visual
-**Tools:** Vix or Mogrify
-**Content:** Title (monospace), tag pills, first paragraph
-**Style:** Minimalist, high contrast, 1200x630 aspect ratio
-
-## Caching Strategy
-
-**Storage:**
-- Path: `priv/static/images/generated/`
-- Naming: `{post_slug}.png` (e.g., `2022-07-16_making_my_blog.png`)
-- Cache: ETS alongside post content
-
-**Regeneration triggers:**
-- Post content hash changes
-- Manual cache invalidation
-- Missing image file
-
-**Performance:**
-- Generate on first request (dev)
-- Pre-generate all (production deploys)
-
-## Homepage Integration
-
-```heex
-<div class="post-card">
-  <img src={@post.image_url} alt={@post.image_caption} class="post-image" />
-  <div class="post-content">
-    <h2>{@post.title}</h2>
-    <p class="post-description">{@post.description}</p>
-    <div class="post-tags">
-      <%= for tag <- @post.tags do %>
-        <span class="tag-pill">{tag}</span>
-      <% end %>
-    </div>
-  </div>
-</div>
-```
-
-**Design:** Modern minimal, monospace typography, card grid, hover effects, lazy loading
+- New post created
+- Post title changed
+- Post tags changed
+- Topic significantly shifted
 
 ## Dependencies
 
-**Elixir:**
-- `vix` or `mogrify` - Image manipulation
-- `req` - HTTP client for external APIs
-- `jason` - JSON parsing
-
-**External (optional):**
-- `@mermaid-js/mermaid-cli` - Diagram rendering (npm)
-- `puppeteer` - Browser automation (npm)
-
-**System:**
-- ImageMagick (for Vix/Mogrify)
-- Node.js (if using mermaid-cli/puppeteer)
-
-## Future Enhancements
-
-- A/B test different styles
-- Social media specific sizes (Twitter, LinkedIn)
-- Dark/light mode variants
-- Animated previews (GIF/video)
-- AI-generated images (Stable Diffusion, DALL-E)
-
-## References
-
-- [Open Graph Best Practices](https://og-playground.vercel.app/)
-- [Carbon API](https://github.com/carbon-app/carbon)
-- [Vix Documentation](https://hexdocs.pm/vix/)
-- [Mermaid CLI](https://github.com/mermaid-js/mermaid-cli)
+- `rsvg-convert` (from librsvg via homebrew)
+- ImageMagick 7 (`magick`) available as backup

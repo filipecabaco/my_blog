@@ -13,7 +13,7 @@ defmodule BlogWeb.PostLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <main class="container">
+    <main class="container" style="max-width: 1200px;">
       <.flash kind={:info} flash={@flash} />
       <.flash kind={:error} flash={@flash} />
 
@@ -21,8 +21,8 @@ defmodule BlogWeb.PostLive.Index do
         <p>No posts found. Please ensure GITHUB_API_TOKEN is set correctly.</p>
       <% else %>
         <section class="hero">
-          <h1 class="hero-title">Technical Blog</h1>
-          <p class="hero-subtitle">Code, architecture, and discoveries</p>
+          <h1 class="hero-title">filipecabaco.com</h1>
+          <p class="hero-subtitle">Building things, breaking things, writing about it</p>
         </section>
 
         <div class="post-grid">
@@ -30,9 +30,7 @@ defmodule BlogWeb.PostLive.Index do
             <% path = if @branch, do: ~p"/post/#{post.title}?branch=#{@branch}", else: ~p"/post/#{post.title}" %>
             <article class="post-card">
               <.link navigate={path} class="post-card-link">
-                <div class="post-image-placeholder">
-                  <span class="post-image-icon">📝</span>
-                </div>
+                <img src={"/images/posts/#{post.title}.png"} alt={post.label} class="post-card-image" loading="lazy" />
                 <div class="post-card-content">
                   <h2 class="post-card-title">{post.label}</h2>
                   <p class="post-card-description">{post.description}</p>

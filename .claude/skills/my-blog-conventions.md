@@ -67,6 +67,73 @@ become `<category>` elements in the Atom feed.
 GitHub API token loaded from `GITHUB_API_TOKEN` or `GITHUB_TOKEN` env vars
 (see `config/runtime.exs`). `.env` is gitignored. Never commit tokens.
 
+## Design System
+
+### Visual Style: GitHub Dark
+
+Clean, minimal, monochromatic. Inspired by GitHub's dark mode.
+
+**Theme Tokens (CSS variables in `assets/css/app.css`):**
+
+| Token | Value | Usage |
+|---|---|---|
+| `--bg-primary` | `#0d1117` | Page background |
+| `--bg-secondary` | `#161b22` | Cards, panels |
+| `--bg-tertiary` | `#1c2128` | Code blocks, tag pills, inputs |
+| `--bg-overlay` | `rgba(13,17,23,0.8)` | Sticky header backdrop |
+| `--text-primary` | `#e6edf3` | Headings, body text |
+| `--text-secondary` | `#8b949e` | Descriptions, labels, nav |
+| `--text-muted` | `#6e7681` | Subtle UI elements |
+| `--border-color` | `#30363d` | Card borders, dividers |
+| `--border-subtle` | `#21262d` | Subtle separators |
+| `--link-color` | `#58a6ff` | Links, accents |
+
+**Typography:**
+- Monospace everywhere: `--font-mono` (SF Mono, Monaco, Inconsolata, Fira Code)
+- Sans-serif available: `--font-sans` (system stack) - not currently used
+- Tag pills are lowercase with subtle letter-spacing
+
+**Spacing Scale:**
+- `--space-xs` (0.25rem) through `--space-3xl` (4rem)
+
+**Radius:**
+- `--radius-sm` (4px), `--radius-md` (6px), `--radius-lg` (8px)
+
+**Interactive Elements:**
+- Cards lift on hover (`translateY(-2px)`) with border brightening
+- All transitions use `--transition` (0.15s ease)
+- No neon, no glow, no gradients - just subtle border/color shifts
+
+**Layout:**
+- Default container: 800px max-width
+- Homepage/header: 1200px max-width
+- Dashboard: 900px max-width
+- Grid cards: 340px min-width auto-fill
+- Boids particle animation in background (JS, `pointer-events: none`)
+
+**Syntax Highlighting:**
+- highlight.js with `github-dark` theme
+- Languages: Elixir, JavaScript, Bash, SQL, JSON, HTML
+- Code blocks: `--bg-tertiary` background, `--border-color` border, 8px radius
+
+**CSS Architecture:**
+- `phoenix.css`: Base element reset using theme variables (no classes)
+- `app.css`: All theme tokens + component styles
+- All colors/spacing reference CSS variables - never hardcoded in components
+
+### Image Generation Guidelines
+
+Images must match the GitHub dark monochromatic aesthetic:
+- **Backgrounds**: Always `#0d1117` or `#161b22` - never white or light
+- **Text**: Monospace in `#e6edf3` (primary) or `#8b949e` (secondary)
+- **Accents**: Only `#58a6ff` (blue links) - no neon, no gradients, no bright colors
+- **Borders**: `#30363d` - thin, subtle, 8px radius for containers
+- **Code blocks**: Use `github-dark` syntax theme, `#1c2128` background
+- **Terminal theme**: `#e6edf3` text on `#0d1117` background, monospace
+- **Style**: Clean, minimal, monochromatic - no glowing effects, no animations in images
+- **Cards/Panels**: `#161b22` background with `#30363d` border
+- **Aspect ratio**: 1200x630 for OG images
+
 ## Writing Style & Structure
 
 Posts follow a playful technical style that balances honest expertise with approachability.

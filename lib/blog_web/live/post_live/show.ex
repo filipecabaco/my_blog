@@ -97,6 +97,7 @@ defmodule BlogWeb.PostLive.Show do
       <%= for read_tag <- @read_tags do %>
         <.live_component module={BlogWeb.Components.ReadTag} id={"read_tag_#{read_tag.socket.id}"} title={@title} owner_id={read_tag.socket.id} />
       <% end %>
+
       <%= if @tags != [] do %>
         <div class="post-tags">
           <%= for tag <- @tags do %>
@@ -104,11 +105,13 @@ defmodule BlogWeb.PostLive.Show do
           <% end %>
         </div>
       <% end %>
+
       {raw(@post)}
-      <span>
-        <.link navigate={~p"/"}>Back</.link>
-      </span>
-      <div>Total readers: {@counter}</div>
+
+      <div class="post-footer">
+        <.link navigate={~p"/"}>Back to posts</.link>
+        <span>{@counter} readers</span>
+      </div>
     </main>
     """
   end
