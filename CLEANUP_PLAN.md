@@ -74,6 +74,44 @@
 - [x] Fixed HEEx formatting (`<%= if %>` → `{if}`)
 - [x] Added GitHub Actions CI pipeline (compile, format, test)
 
+## ✅ Phase 6 - Visual Overhaul (Complete)
+
+### Design System (GitHub Dark Theme)
+- [x] Created CSS variable token system in `:root` (backgrounds, text, borders, accent, fonts, spacing, radius)
+- [x] Stripped Milligram CSS framework from phoenix.css, replaced with dark-themed base styles
+- [x] All components use CSS tokens instead of hardcoded values
+
+### Homepage & Cards
+- [x] Card-based homepage with post grid layout
+- [x] Post cards show image, title, description, and tag pills
+- [x] Tags extracted from post content and displayed as pills
+- [x] Post descriptions extracted and shown on cards
+
+### Dashboard
+- [x] Fixed VegaLite chart styling (snake_case keys for Elixir library)
+- [x] Monochromatic bar chart with GitHub dark colors
+- [x] Integer-only x-axis values
+- [x] Post title labels strip date prefix
+
+### Code Blocks
+- [x] Added highlight.js with github-dark theme
+- [x] Syntax highlighting for elixir, javascript, bash, sql, json, xml
+
+### Read Tags
+- [x] Fixed positioning: `position: fixed; left: 0`
+- [x] Monochromatic styling via CSS classes
+- [x] 32x32px with border-radius 10px
+
+### Navigation
+- [x] Header in root.html.heex with `data-phx-link="redirect"` for LiveView navigation
+- [x] Sticky header with backdrop blur
+
+### Post Images
+- [x] Topic-based SVG illustrations for all 8 posts (converted to PNG via rsvg-convert)
+- [x] Tag-to-illustration mapping (browser window, funnel, bar chart, graph, feed, connected clients, neural network, desktop window)
+- [x] Images are illustration-only (no title/tags — shown in HTML card)
+- [x] Image generation strategy documented as a skill (v3.1.0)
+
 ## Current Status
 
 **Compilation: 0 warnings, 0 errors**
@@ -86,5 +124,3 @@
 
 ### Features
 - [ ] Add search functionality
-- [ ] Add tags/categories
-- [ ] Dark mode

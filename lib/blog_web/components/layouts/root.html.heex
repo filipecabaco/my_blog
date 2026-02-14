@@ -5,22 +5,32 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
-    <link href="atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
+    <link href="/atom" type="application/atom+xml" rel="alternate" title="Sitewide Atom feed" />
+    <link rel="icon" href={~p"/favicon.ico"} type="image/x-icon" />
+    <link rel="apple-touch-icon" href={~p"/images/apple-touch-icon.png"} />
 
-    <%= if assigns[:page_title] do %>
-      <meta name="twitter:card" content="summary" />
-      <meta name="twitter:site" content="@filipecabaco" />
-      <meta name="twitter:creator" content="@filipecabaco" />
-      <meta property="og:title" content={@page_title} />
-      <meta property="og:description" content={@description} />
+    <meta name="twitter:site" content="@filipecabaco" />
+    <meta name="twitter:creator" content="@filipecabaco" />
+    <meta property="og:site_name" content="Filipe Cabaco Blog" />
+
+    <%= if assigns[:title] do %>
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta property="og:title" content={assigns[:page_title] || "Filipe Cabaco Blog"} />
+      <meta property="og:description" content={assigns[:description] || ""} />
+      <meta property="og:type" content="article" />
+      <meta property="og:url" content={BlogWeb.Endpoint.url() <> "/post/#{@title}"} />
+      <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/posts/#{@title}.png"} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+    <% else %>
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta property="og:title" content="Filipe Cabaco Blog" />
+      <meta property="og:description" content="Building things, breaking things, writing about it" />
       <meta property="og:type" content="website" />
-      <%= if assigns[:title] do %>
-        <meta property="og:url" content={BlogWeb.Endpoint.url() <> ~p"/post/#{@title}"} />
-      <% end %>
-      <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/logo.png"} />
-      <meta property="og:image:width" content="128" />
-      <meta property="og:image:heigth" content="128" />
-      <meta property="og:site_name" content="Filipe Cabaco Blog" />
+      <meta property="og:url" content={BlogWeb.Endpoint.url()} />
+      <meta property="og:image" content={BlogWeb.Endpoint.url() <> "/images/og-root.png"} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
     <% end %>
 
     <.live_title prefix="Filipe Cabaco Blog ">

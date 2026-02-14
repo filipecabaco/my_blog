@@ -7,7 +7,7 @@ defmodule Blog.Feed do
     |> Enum.map(&prepare_entry/1)
     |> Enum.reject(&is_nil/1)
     |> then(fn entries ->
-      [{:feed, %{}, header() ++ entries}]
+      [{:feed, %{xmlns: "http://www.w3.org/2005/Atom"}, header(entries) ++ entries}]
       |> Enum.reduce([], &build_entity/2)
       |> :xmerl.export_simple(:xmerl_xml)
       |> List.flatten()
@@ -27,16 +27,29 @@ defmodule Blog.Feed do
   defp prepare_attributes(attributes),
     do: Enum.map(attributes, fn {k, v} -> {k, to_charlist(v)} end)
 
-  defp header do
+  defp header(entries) do
+    latest_date = latest_updated(entries)
+
     [
       {:title, %{}, "Filipe Cabaco Blog"},
       {:subtitle, %{}, "My improvised adventures with Elixir and other languages"},
       {:link, %{href: "https://filipecabaco.com/atom", rel: "self"}, nil},
       {:link, %{href: "https://filipecabaco.com"}, nil},
       {:id, %{}, "filipecabaco.com"},
-      {:updated, %{}, DateTime.new!(~D[2022-07-30], ~T[00:00:00]) |> DateTime.to_iso8601()},
+      {:updated, %{}, latest_date},
       {:author, %{}, [{:name, %{}, "Filipe Cabaco"}]}
     ]
+  end
+
+  defp latest_updated(entries) do
+    entries
+    |> Enum.flat_map(fn {:entry, _, children} ->
+      Enum.flat_map(children, fn
+        {:updated, _, date} when is_binary(date) -> [date]
+        _ -> []
+      end)
+    end)
+    |> Enum.max(fn -> DateTime.utc_now() |> DateTime.to_iso8601() end)
   end
 
   defp prepare_entry(name) do
@@ -51,13 +64,16 @@ defmodule Blog.Feed do
       tags = Posts.tags(post)
       categories = Enum.map(tags, fn tag -> {:category, %{term: tag}, nil} end)
 
+      image = "https://filipecabaco.com/images/posts/#{name}.png"
+
       {:entry, %{},
        [
          {:id, %{}, link},
          {:title, %{}, title},
          {:updated, %{}, date},
-         {:content, %{}, description},
-         {:link, %{href: link}, nil}
+         {:summary, %{type: "text"}, description},
+         {:link, %{href: link}, nil},
+         {:link, %{href: image, rel: "enclosure", type: "image/png"}, nil}
        ] ++ categories}
     else
       {:error, reason} ->

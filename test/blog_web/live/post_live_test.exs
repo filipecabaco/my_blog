@@ -48,7 +48,7 @@ defmodule BlogWeb.PostLiveTest do
           title = String.replace(first, ".md", "")
           {:ok, _view, html} = live(conn, ~p"/post/#{title}")
           assert html =~ "Back"
-          assert html =~ "Total readers"
+          assert html =~ "readers"
 
         [] ->
           # No posts available (expected in CI without valid token)
