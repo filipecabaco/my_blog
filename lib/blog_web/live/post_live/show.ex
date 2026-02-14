@@ -61,9 +61,13 @@ defmodule BlogWeb.PostLive.Show do
   end
 
   @impl true
-  def handle_info(%{event: "reader"}, socket) do
-    title = socket.assigns.title
+  def handle_info(%{event: "reader"}, %{assigns: %{pr: nil, title: title}} = socket) do
     :telemetry.execute([:blog, :visit], %{}, %{title: title})
+    BlogWeb.Endpoint.broadcast("show", "join", %{title: title})
+    {:noreply, socket}
+  end
+
+  def handle_info(%{event: "reader"}, %{assigns: %{title: title}} = socket) do
     BlogWeb.Endpoint.broadcast("show", "join", %{title: title})
     {:noreply, socket}
   end

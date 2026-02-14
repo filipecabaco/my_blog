@@ -28,11 +28,11 @@ defmodule BlogWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-  end
 
-  plug Phoenix.LiveDashboard.RequestLogger,
-    param_key: "request_logger",
-    cookie_key: "request_logger"
+    plug Phoenix.LiveDashboard.RequestLogger,
+      param_key: "request_logger",
+      cookie_key: "request_logger"
+  end
 
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]

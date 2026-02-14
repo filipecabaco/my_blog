@@ -220,6 +220,28 @@ defmodule BlogWeb.PostLiveTest do
       assert html =~ "tag-pill"
     end
 
+    test "does not track statistics for PR preview posts", %{conn: conn} do
+      title = "2024-01-15_test_post"
+      counter_before = Blog.Statistics.fetch(title)
+
+      {:ok, view, _html} = live(conn, ~p"/post/#{title}?pr=42")
+      send(view.pid, %{topic: "show", event: "reader"})
+      _ = render(view)
+
+      assert Blog.Statistics.fetch(title) == counter_before
+    end
+
+    test "tracks statistics for regular posts", %{conn: conn} do
+      title = "2024-01-15_test_post"
+      counter_before = Blog.Statistics.fetch(title)
+
+      {:ok, view, _html} = live(conn, ~p"/post/#{title}")
+      send(view.pid, %{topic: "show", event: "reader"})
+      _ = render(view)
+
+      assert Blog.Statistics.fetch(title) == counter_before + 1
+    end
+
     test "renders back link with pr param when previewing PR", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post?pr=42")
 

@@ -14,7 +14,16 @@
       "Bash(git push:*)",
       "Bash(gh pr:*)",
       "Bash(git -C /Users/filipecabaco/workspace/my_blog log --oneline --all -30)",
-      "Bash(mix deps:*)"
+      "Bash(mix deps:*)",
+      "Bash(mix hex.info:*)",
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:community.fly.io)",
+      "WebFetch(domain:www.rabbitmq.com)",
+      "WebFetch(domain:elixirforum.com)",
+      "WebFetch(domain:erlangforums.com)",
+      "WebFetch(domain:www.erlang.org)",
+      "WebFetch(domain:adoptingerlang.org)",
+      "Bash(docker manifest inspect:*)"
     ]
   }
 }

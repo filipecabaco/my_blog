@@ -1,7 +1,7 @@
 defmodule Blog.Statistics do
   use GenServer
 
-  def start_link(path), do: GenServer.start_link(__MODULE__, path, name: __MODULE__)
+  def start_link(path), do: GenServer.start_link(__MODULE__, path, name: __MODULE__, spawn_opt: [fullsweep_after: 20])
 
   @impl true
   def init(path) do
@@ -35,5 +35,9 @@ defmodule Blog.Statistics do
   end
 
   def fetch(title), do: GenServer.call(__MODULE__, {:fetch, title})
-  def handle_event([:blog, :visit], _, %{title: title}, _), do: :dets.update_counter(:statistics, to_charlist(title), 1)
+  def handle_event([:blog, :visit], _, %{title: title}, _) do
+    key = to_charlist(title)
+    :dets.insert_new(:statistics, {key, 0})
+    :dets.update_counter(:statistics, key, 1)
+  end
 end

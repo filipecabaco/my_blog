@@ -8,7 +8,7 @@ defmodule Blog.Posts do
   @refresh_interval :timer.minutes(25)
 
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__, spawn_opt: [fullsweep_after: 20])
   end
 
   @impl true
@@ -231,7 +231,7 @@ defmodule Blog.Posts do
   end
 
   defp req_get(url, opts \\ []) do
-    [url: url, headers: [{"Authorization", "Bearer #{token()}"}], receive_timeout: 15_000, connect_options: [timeout: 5_000]]
+    [url: url, headers: [{"Authorization", "Bearer #{token()}"}], receive_timeout: 15_000]
     |> Keyword.merge(opts)
     |> Keyword.merge(Application.get_env(:blog, :req_options, []))
     |> Req.new()

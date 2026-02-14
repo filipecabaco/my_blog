@@ -22,6 +22,15 @@ defmodule Blog.StatisticsTest do
     assert Statistics.fetch(title) == 2
   end
 
+  test "telemetry event initializes and increments a new counter" do
+    title = "new_post_#{System.unique_integer()}"
+
+    assert Statistics.fetch(title) == 0
+
+    :telemetry.execute([:blog, :visit], %{}, %{title: title})
+    assert Statistics.fetch(title) == 1
+  end
+
   test "fetch works for a manually inserted counter" do
     title = "manual_#{System.unique_integer()}"
 
