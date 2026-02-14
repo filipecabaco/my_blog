@@ -126,7 +126,7 @@ Rest of content...
 - Technical depth with code examples
 - Progressive disclosure: simple to complex
 - Personal opening hook, honest caveats section, bullet-point conclusion
-- 3-7 emoji per post, strategically placed, never in code blocks
+- No emojis — keep the tone conversational without them
 
 **Content must be authentic** -- grounded in real contributions and experience, not generic.
 
