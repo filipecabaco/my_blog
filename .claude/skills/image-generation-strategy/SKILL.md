@@ -37,23 +37,27 @@ When a new blog post is created, you MUST:
 
 All images are **1200x630** and strictly monochromatic:
 
-| Element | Color |
-|---------|-------|
-| Background | `#0d1117` |
-| Panel/card fills | `#161b22` |
-| Tertiary fills | `#1c2128` |
-| Primary text (title) | `#e6edf3` |
-| Secondary text (labels) | `#8b949e` |
-| Muted elements | `#6e7681` |
-| Borders/strokes | `#30363d` |
-| Accent (bottom line) | `#58a6ff` at 30% opacity |
-| Tag pill bg | `#1c2128` with `#30363d` border |
+| Element | Color | Usage |
+|---------|-------|-------|
+| Background | `#0d1117` | Canvas background |
+| Container frame | `#5a6670` | Border rect around illustration area |
+| Illustration elements | `#5a6670`, `#4a5460`, `#6e7681` | Lines, boxes, shapes, borders |
+| Panel/card fills | `#161b22` | Box backgrounds inside illustration |
+| Tertiary fills | `#1c2128` | Subtle background layers |
+| Text (labels) | `#8b949e` | 18px+ for visibility at thumbnail size |
+| Muted text | `#6e7681` | Smaller secondary text |
+| Accent line ONLY | `#58a6ff` at 30% opacity | Bottom accent line only — do NOT use elsewhere |
+| Border details | `#30363d` | Subtle inner borders/dividers |
 
-**Rules:**
-- Monospace font everywhere (monospace in SVG)
-- Monochromatic only - greys and one blue accent
-- No neon, no gradients, no bright colors, no emoji
-- Abstract/geometric illustrations, not code screenshots
+**Critical Rules:**
+- **Illustration colors**: Use ONLY muted grays (#5a6670, #4a5460, #6e7681) — never use bright #58a6ff for illustration elements
+- **Accent blue**: #58a6ff is ONLY for the bottom accent line (4px rect at y=626), nowhere else
+- **Text sizing**: 18px minimum for labels, 28px+ for titles — cards are previewed small
+- **Canvas margins**: 100px left/right, 60-80px top/bottom — don't extend illustration to edges
+- **Container frame**: Add a subtle `<rect>` border (x=100, y=60, width=1000, height=510, stroke=#5a6670, stroke-width=2) to define illustration bounds
+- **Monospace font**: Use monospace for all text in SVG
+- **No neon, gradients, or bright colors** — stick to the muted palette
+- **Abstract/geometric** — not code screenshots or realistic images
 - 8px radius on panels, 4px on pills, 6-10px on windows
 
 ## Tag-to-Illustration Mapping
@@ -74,19 +78,33 @@ Choose illustration based on the post's primary tags:
 
 ## SVG Layout Template
 
+Canvas: **1200x630px**
+
 ```
-┌──────────────────────────────────────────┐
-│                                          │
-│     [Topic illustration]                 │
-│     (fills entire 1200x630 canvas)       │
-│                                          │
-│                                          │
-│                                          │
-│  ════════════════════ accent (y=626)     │
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐  y=0
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  y=60  ← container frame starts
+│  │                                               │
+│  │   [Illustration fills here, roughly          │
+│  │    800-950px wide × 450px tall]              │
+│  │                                               │
+│  │   Use muted grays (#5a6670, #4a5460)        │
+│  │   NO bright colors, NO title text            │
+│  │                                               │
+│  └───────────────────────────────────────────────┘  y=570 ← container frame ends
+│                                                     │
+│  ════════════════════════════════════════════════  y=626 ← accent line (4px, #58a6ff 30%)
+└─────────────────────────────────────────────────────┘  y=630
+0   100px margin            1100    1200px
 ```
 
-The illustration fills the full image. Only the accent line at the bottom is added. **Do NOT include title text or tag pills** — those are rendered in the HTML card below the image.
+**Canvas breakdown:**
+- Margins: 100px left/right, 60px top, 4px bottom for accent line
+- Usable illustration area: x ∈ [100, 1100], y ∈ [60, 570]
+- Container frame: `<rect x="100" y="60" width="1000" height="510" stroke="#5a6670" stroke-width="2" fill="none" rx="16"/>`
+- Accent line: `<rect x="0" y="626" width="1200" height="4" fill="#58a6ff" opacity="0.3"/>`
+
+**Important**: Illustration should fill most of the container (not cramped in a corner). Distribute content vertically and horizontally to use the space effectively.
 
 ## Generation Process
 
@@ -102,14 +120,37 @@ The illustration fills the full image. Only the accent line at the bottom is add
 
 ## Illustration Guidelines
 
-When drawing SVG illustrations:
-- Use **geometric shapes** (circles, rects, lines) - no complex paths
-- Layer opacity for depth (0.3-0.8 range)
-- Dashed lines (`stroke-dasharray="6,4"`) for connections/data flow
-- Small circles (r=3-6) as live indicator dots
-- Window chrome: rounded rect + 3 dots at top-left + title bar
-- Minimal detail - suggest the concept, don't overload
-- Center the illustration horizontally
+**Shape and composition:**
+- Use **geometric shapes only** (circles, rects, lines, polygons) — no complex bezier curves
+- Layer opacity for depth (0.3-0.8 range for secondary elements)
+- Dashed lines (`stroke-dasharray="6,4"`) for connections, flows, or optional elements
+- Small circles (r=3-6) as live indicator dots or connection points
+- Window chrome: rounded rect + 3 dots at top-left + title bar separator
+- Minimal detail — suggest the concept, don't overload with decoration
+
+**Canvas usage:**
+- Center illustration horizontally in usable area (x: 100-1100)
+- Distribute vertically to fill y: 60-570 space (use most of it, don't leave large gaps)
+- For multi-element layouts (diagrams, grids), space elements evenly
+- Minimum 40px between major elements for visual breathing room
+- Use text labels (18px+) to clarify what elements represent
+
+**Color discipline:**
+- Borders/outlines: #5a6670 or #30363d
+- Boxes/containers: #161b22 for fills, #5a6670 for stroke
+- Text: #8b949e for main labels, #6e7681 for secondary
+- Details/depth: #4a5460 or #1c2128 with reduced opacity
+- **Never use #58a6ff in the illustration** — only in the accent line
+
+## Common Mistakes to Avoid
+
+1. **Using bright colors for illustration**: #58a6ff should ONLY be the accent line at the bottom, never for diagram elements. Use muted grays instead.
+2. **Cramped illustrations**: Leaving large blank areas at bottom. Distribute content vertically to fill y: 60-570.
+3. **Text too small**: Cards are viewed at thumbnail size. Minimum 18px for labels, 28px+ for titles.
+4. **No container frame**: The subtle rect border (x=100, y=60, width=1000, height=510) is essential for defining visual boundaries.
+5. **Extending to edges**: Illustration should have ~100px margins on sides. Don't extend elements to x=0 or x=1200.
+6. **Missing accent line**: Every image must end with the blue accent line at y=626. Easy to forget.
+7. **Complex paths instead of shapes**: Stick to circles, rects, lines, polygons. Avoid bezier curves and complex SVG paths.
 
 ## When to Regenerate
 
