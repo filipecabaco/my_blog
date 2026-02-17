@@ -44,14 +44,6 @@ Result: ~1,259 tests distributed across 4 partitions. CI time: 10 minutes → 3 
 
 **Coverage merging** — Each partition uploads its coverage, a separate job merges them with `carryforward`. Ensures accurate coverage across all 1,259 tests.
 
-## The Trade-offs We Accept
-
-**Cost:** 4× the runner hours means higher CI costs. We weighed this against developer time (expensive) vs. machine time (cheap). The trade-off was obvious.
-
-**Flakiness amplification:** Running tests in parallel can surface race conditions that don't appear serially. But that's a feature, not a bug—those races are real bugs you want to catch. We invested in making tests deterministic (removing hardcoded timeouts, using proper async waits) rather than hiding the problems.
-
-**Setup/teardown overhead:** Each partition spins up its own Postgres container. For 4 partitions, that's 4× database startup overhead. Worth it when the slowest test suite takes 8 minutes, but at very large scales (50+ partitions), this gets expensive. Know your boundary.
-
 ## Results
 
 - **Before:** ~1,259 tests running serially: ~10 minutes per CI run
