@@ -69,14 +69,6 @@ Result: ~1,259 tests distributed across 4 partitions. CI time: 10 minutes → 3 
 - **Infrastructure:** 8vCPU runners × 4 partitions = more expensive per run, but outweighed by developer velocity gains
 - **Feedback loop:** Context loss eliminated. PRs can be validated in 3 minutes instead of 10, keeping developers in flow.
 
-## Caveats
-
-**Uneven partition balance** — ExUnit distributes by name hash, which is usually balanced. If one partition runs significantly longer, you can adjust by reordering tests or splitting problematic test files.
-
-**Flaky tests surface faster** — Parallelization reveals race conditions that hide in serial runs. If you see new flakiness after partitioning, that's actually a bug you want to catch. Fix the race condition, don't avoid parallelization.
-
-**Infrastructure cost** — 4 parallel runners costs more than 1. But the math favors it: developer time saved (2–3 hours/dev/week) far exceeds the compute cost increase.
-
 ## Conclusion
 
 Partitioning CI is a straightforward optimization with outsized returns: less time waiting, better test isolation, and catching real concurrency bugs. It costs more in machine resources but pays back in developer velocity.
