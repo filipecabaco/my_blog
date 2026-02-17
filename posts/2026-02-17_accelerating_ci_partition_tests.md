@@ -53,6 +53,14 @@ Result: ~1,259 tests distributed across 4 partitions. CI time: 10 minutes → 3 
 - **Infrastructure:** 8vCPU runners × 4 partitions = more expensive per run, but outweighed by developer velocity gains
 - **Feedback loop:** Context loss eliminated. PRs can be validated in 3 minutes instead of 10, keeping developers in flow.
 
+## Why This Works Well in Elixir
+
+ExUnit's `--partitions` flag is a language-level feature, not a third-party tool or convention. This means partitioning is built into the test runner itself—no custom shims, no external orchestration. The partition isolation is trivial to implement: derive unique database names and ports from the `MIX_TEST_PARTITION` environment variable using simple arithmetic. A test that normally uses `Port 4002` on partition 1 uses `4002 + (partition - 1) * 1000` on partition 2. Database names follow the same pattern. Elixir's pattern matching and environment handling make this straightforward without boilerplate.
+
+Mix aliases and environment variable propagation handle the rest. A single alias can pass `MIX_TEST_PARTITION` to the test runner, which respects it in your `config/test.exs`. No shell scripting, no manual setup—Elixir's pragmatism shines here. The language doesn't fight you; it assumes you'll want deterministic, isolated test environments and makes that cheap to build.
+
+This simplicity is a consequence of Elixir's design philosophy. Other languages would need more infrastructure: environment variable plumbing, careful teardown logic, or external tools like pytest-xdist or Go's `-parallel` flag with custom coordination. Elixir gets out of the way and lets you express the solution directly. The cost is negligible because the problem is simple and the language handles complexity well.
+
 ## Conclusion
 
 Partitioning CI is a straightforward optimization with outsized returns: less time waiting, better test isolation, and catching real concurrency bugs. It costs more in machine resources but pays back in developer velocity.
