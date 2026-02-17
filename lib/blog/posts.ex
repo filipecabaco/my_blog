@@ -239,7 +239,7 @@ defmodule Blog.Posts do
   end
 
   defp req_get(url, opts \\ []) do
-    [url: url, headers: [{"Authorization", "Bearer #{token()}"}], receive_timeout: 15_000]
+    [url: url, headers: [{"Authorization", "Bearer #{token()}"}, {"Cache-Control", "no-cache"}, {"Pragma", "no-cache"}], receive_timeout: 15_000]
     |> Keyword.merge(opts)
     |> Keyword.merge(Application.get_env(:blog, :req_options, []))
     |> Req.new()

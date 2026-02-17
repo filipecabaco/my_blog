@@ -13,6 +13,9 @@ defmodule BlogWeb.PRImageController do
       content_type = MIME.from_path(image_path)
 
       conn
+      |> put_resp_header("cache-control", "no-store, no-cache, must-revalidate, max-age=0")
+      |> put_resp_header("pragma", "no-cache")
+      |> put_resp_header("expires", "0")
       |> put_resp_content_type(content_type)
       |> send_resp(200, body)
     else
@@ -27,7 +30,7 @@ defmodule BlogWeb.PRImageController do
     url = "https://raw.githubusercontent.com/filipecabaco/my_blog/#{branch}/priv/static/images/#{path}"
 
     opts =
-      [url: url]
+      [url: url, headers: [{"Cache-Control", "no-cache"}, {"Pragma", "no-cache"}]]
       |> Keyword.merge(Application.get_env(:blog, :req_options, []))
 
     case Req.get(Req.new(opts)) do
