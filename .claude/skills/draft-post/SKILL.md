@@ -151,7 +151,7 @@ Use specific work as examples/evidence, but the topic should apply broadly to an
 ### Generate Card Image
 
 Follow the `image-generation-strategy` skill:
-1. Create an SVG illustration based on the post's tags (illustration only, no title/tags text)
+1. Create an SVG illustration based on the post's tags — **NO text of any kind** (no titles, no tags, no labels, no numbers, no annotations — only geometric shapes)
 2. Use GitHub dark theme colors (background `#0d1117`, panels `#161b22`, accent `#58a6ff`)
 3. Canvas size 1200x630, monochromatic, geometric/abstract style
 4. Convert to PNG:
