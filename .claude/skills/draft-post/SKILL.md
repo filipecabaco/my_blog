@@ -12,6 +12,16 @@ user_invocable: true
 
 End-to-end workflow: research contributions, extract broad engineering themes, pick a topic, write a draft post, generate a card image, and open a draft PR.
 
+## Model Guidance
+
+This skill uses different models for different task types to balance cost and quality:
+
+- **Opus for writing/implementation work**: Use when writing post content, creating card image illustrations, or doing complex creative tasks that require high-quality output.
+- **Haiku for small edits/fixes**: Use for cost-saving on quick tasks like adjusting colors, fixing spacing, removing sections, tweaking text, or making minor adjustments to existing content. Haiku is fast and efficient for these bounded, low-risk changes.
+- **Sonnet for summarizing/decision-making**: Use when synthesizing information, making choices between options, or evaluating quality.
+
+After the post is drafted, use Haiku for all subsequent edits and refinements to the post content or card image.
+
 ## Step 1: Research Author Contributions
 
 **Model**: Use `haiku` — this is a research/context-gathering step.
