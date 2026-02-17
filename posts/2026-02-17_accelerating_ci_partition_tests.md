@@ -22,15 +22,7 @@ strategy:
 run: MIX_TEST_PARTITION=${{ matrix.partition }} mix coveralls.lcov --partitions 4
 ```
 
-**2. Partition-aware config** — Each partition gets unique databases and ports:
-
-```elixir
-partition = System.get_env("MIX_TEST_PARTITION")
-database: "realtime_test#{partition}"       # test1, test2, test3, test4
-http_port: if(partition, do: 4002 + String.to_integer(partition), else: 4002)
-```
-
-This allows all 4 partitions to run simultaneously without conflicts.
+**2. Partition isolation** — Each partition gets unique databases and ports (via `MIX_TEST_PARTITION` env var). Allows all 4 to run simultaneously without conflicts.
 
 **3. Docker + dependency caching** — Cache the Postgres image and Mix dependencies:
 
