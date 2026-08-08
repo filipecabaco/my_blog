@@ -43,20 +43,11 @@ defmodule BlogWeb.PostLiveTest do
   end
 
   describe "Index" do
-    test "renders post grid with cards", %{conn: conn} do
+    test "renders the register of posts", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "post-grid"
-      assert html =~ "post-card"
-      assert html =~ "2024-01-15 test post"
-    end
-
-    test "renders tag pills from post content", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/")
-
-      assert html =~ "tag-pill"
-      assert html =~ "elixir"
-      assert html =~ "phoenix"
+      assert html =~ "lead__title"
+      assert html =~ "Test Post"
     end
 
     test "renders post description", %{conn: conn} do
@@ -65,23 +56,24 @@ defmodule BlogWeb.PostLiveTest do
       assert html =~ "A test post description"
     end
 
-    test "displays reading time on cards", %{conn: conn} do
+    test "displays reading time", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "min read"
+      assert html =~ "1 min"
     end
 
-    test "renders post image", %{conn: conn} do
+    test "renders the post mark rather than a card image", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "/images/posts/2024-01-15_test_post.png"
+      assert html =~ ~s(class="mark")
+      refute html =~ "/images/posts/2024-01-15_test_post.png"
     end
 
-    test "renders hero section", %{conn: conn} do
+    test "lands straight on content, with the bio on its own page", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "filipecabaco.com"
-      assert html =~ "hero-title"
+      refute html =~ "hero-title"
+      assert html =~ ~s(href="/about")
     end
 
     test "includes WebSite JSON-LD structured data on homepage", %{conn: conn} do
@@ -94,10 +86,11 @@ defmodule BlogWeb.PostLiveTest do
   end
 
   describe "Index with PR preview" do
-    test "uses PR image proxy for card images", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/?pr=42")
+    test "serves the card for the PR branch", %{conn: conn} do
+      conn = get(conn, "/images/posts/2024-01-15_test_post.png?pr=42")
 
-      assert html =~ "/pr/42/images/posts/2024-01-15_test_post.png"
+      assert conn.status == 200
+      assert Plug.Conn.get_resp_header(conn, "content-type") == ["image/png; charset=utf-8"]
     end
 
     test "links to posts with pr param", %{conn: conn} do
@@ -112,10 +105,8 @@ defmodule BlogWeb.PostLiveTest do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       assert html =~ "Test Post"
-      assert html =~ "tag-pill"
-      assert html =~ "elixir"
-      assert html =~ "Back to posts"
-      assert html =~ "readers"
+      assert html =~ "All posts"
+      assert html =~ "all-time readers"
     end
 
     test "sets OG meta tags for the post", %{conn: conn} do
@@ -131,22 +122,24 @@ defmodule BlogWeb.PostLiveTest do
 
       assert html =~ ~s(application/ld+json)
       assert html =~ ~s("@type":"BlogPosting")
-      assert html =~ ~s("headline":"2024-01-15 test post")
+      assert html =~ ~s("headline":"Test Post")
       assert html =~ ~s("datePublished":"2024-01-15T00:00:00+00:00")
       assert html =~ ~s("name":"Filipe Cabaco")
-      assert html =~ ~s("keywords":"elixir, phoenix")
+      refute html =~ ~s("keywords")
     end
 
     test "handles missing post gracefully", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/post/nonexistent_post")
 
-      assert html =~ "Failed to load post"
+      assert html =~ "No post at this address"
+      refute html =~ "0 min"
     end
 
-    test "renders read tag for connected user", %{conn: conn} do
+    test "renders a presence lamp for the connected reader", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
 
-      assert html =~ "read-tag"
+      assert html =~ "presence__lamp"
+      assert html =~ "Reading now"
     end
 
     test "updates counter on reader broadcast", %{conn: conn} do
@@ -156,49 +149,49 @@ defmodule BlogWeb.PostLiveTest do
       # Give the message time to be processed
       _ = render(view)
 
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "ignores join broadcast for different post", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       BlogWeb.Endpoint.broadcast("show", "join", %{title: "other_post"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles reader broadcast event", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       send(view.pid, %{topic: "show", event: "reader"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles unknown messages without crashing", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       send(view.pid, %{topic: "unknown", event: "unknown"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles new_tag broadcast for same post", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       BlogWeb.Endpoint.broadcast("read_tag", "new_tag", %{id: "other-socket", title: "2024-01-15_test_post"})
-      assert render(view) =~ "read-tag"
+      assert render(view) =~ "presence__lamp"
     end
 
     test "ignores new_tag broadcast from self", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       BlogWeb.Endpoint.broadcast("read_tag", "new_tag", %{id: view.id, title: "2024-01-15_test_post"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles delete_tag broadcast for same post", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       BlogWeb.Endpoint.broadcast("read_tag", "delete_tag", %{id: "other-socket", title: "2024-01-15_test_post"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles position_update broadcast from other user", %{conn: conn} do
@@ -210,7 +203,7 @@ defmodule BlogWeb.PostLiveTest do
         title: "2024-01-15_test_post"
       })
 
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "ignores position_update broadcast from self", %{conn: conn} do
@@ -222,21 +215,21 @@ defmodule BlogWeb.PostLiveTest do
         title: "2024-01-15_test_post"
       })
 
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "handles scroll_position event", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       render_hook(view, "scroll_position", %{"position" => 200, "title" => "2024-01-15_test_post"})
-      assert render(view) =~ "readers"
+      assert render(view) =~ "all-time readers"
     end
 
     test "does not render tags line as text in post body", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
 
       refute html =~ "tags: elixir, phoenix"
-      assert html =~ "tag-pill"
+      refute html =~ ~s(class="tag")
     end
 
     test "does not track statistics for PR preview posts", %{conn: conn} do
@@ -265,13 +258,13 @@ defmodule BlogWeb.PostLiveTest do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post?pr=42")
 
       assert html =~ "?pr=42"
-      assert html =~ "Back to posts"
+      assert html =~ "All posts"
     end
 
     test "displays reading time", %{conn: conn} do
       {:ok, _view, html} = live(conn, ~p"/post/2024-01-15_test_post")
 
-      assert html =~ "min read"
+      assert html =~ "1 min"
     end
   end
 
@@ -280,7 +273,7 @@ defmodule BlogWeb.PostLiveTest do
       conn = get(conn, ~p"/post/2024-01-15_test_post")
       html = html_response(conn, 200)
 
-      assert html =~ ~s(property="og:title" content="2024-01-15 test post")
+      assert html =~ ~s(property="og:title" content="Test Post")
       assert html =~ ~s(property="og:image")
       assert html =~ "2024-01-15_test_post.png"
       assert html =~ ~s(property="og:type" content="article")
@@ -295,12 +288,13 @@ defmodule BlogWeb.PostLiveTest do
       refute html =~ ~s(property="og:type" content="website")
     end
 
-    test "includes post-specific OG tags even for missing posts", %{conn: conn} do
+    test "does not advertise a missing post as an article", %{conn: conn} do
       conn = get(conn, ~p"/post/nonexistent_post")
       html = html_response(conn, 200)
 
-      assert html =~ ~s(property="og:title" content="Nonexistent post")
-      assert html =~ ~s(property="og:type" content="article")
+      refute html =~ ~s(property="og:type" content="article")
+      refute html =~ "/images/posts/nonexistent_post.png"
+      assert html =~ ~s(property="og:type" content="website")
     end
   end
 

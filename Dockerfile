@@ -39,7 +39,7 @@ RUN mix release
 
 FROM ${RUNNER_IMAGE}
 
-RUN apk add --no-cache libstdc++ openssl ncurses-libs
+RUN apk add --no-cache libstdc++ openssl ncurses-libs rsvg-convert
 
 WORKDIR "/app"
 RUN chown nobody /app

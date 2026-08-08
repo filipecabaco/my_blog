@@ -17,7 +17,10 @@ defmodule BlogWeb.Router do
   scope "/", BlogWeb do
     pipe_through(:browser)
     get("/pr/:pr/images/*path", PRImageController, :show)
+    get("/images/posts/:slug", CardController, :show)
+    get("/images/og-root.png", CardController, :root)
     live("/", PostLive.Index, :index)
+    live("/about", AboutLive.Index, :index)
     live("/post/:title", PostLive.Show, :show)
     live("/open_dashboard", OpenDashboardLive.Index, :index)
     get("/atom", FeedController, :index)

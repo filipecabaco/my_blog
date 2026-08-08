@@ -54,8 +54,15 @@ defmodule Blog.MixProject do
       {:jason, "~> 1.4"},
       {:bandit, "~> 1.6"},
       {:earmark, "~> 1.4"},
+      {:makeup, "~> 1.2"},
+      {:makeup_elixir, "~> 1.0"},
+      {:makeup_erlang, "~> 1.0"},
+      {:makeup_js, "~> 0.1"},
+      {:makeup_json, "~> 1.0"},
+      {:makeup_html, "~> 0.2"},
+      {:makeup_sql, "~> 0.1"},
+      {:makeup_diff, "~> 0.1"},
       {:req, "~> 0.5"},
-      {:vega_lite, "~> 0.1"},
       {:castore, "~> 1.0"}
     ]
   end

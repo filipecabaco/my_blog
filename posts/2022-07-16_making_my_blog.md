@@ -1,5 +1,4 @@
 # Making my blog
-tags: backend, web, real-time
 
 For years I've wanted to write down and share what I'm coding but always postponed it. That time has ended! It's time for me to try and be more proactive and share some of my discoveries, weirdnesses and joys of coding.
 

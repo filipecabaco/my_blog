@@ -20,38 +20,49 @@ defmodule BlogWeb.DashboardTest do
       end
     end)
 
+    Req.Test.allow(__MODULE__, self(), Process.whereis(Blog.Posts))
+    Blog.Posts.refresh()
+
     on_exit(fn ->
       Application.delete_env(:blog, :req_options)
       Blog.Posts.invalidate_cache()
     end)
   end
 
-  test "renders dashboard page with chart", %{conn: conn} do
+  test "renders the readership page", %{conn: conn} do
     {:ok, _view, html} = live(conn, ~p"/open_dashboard")
 
-    assert html =~ "Analytics"
-    assert html =~ "Post views"
-    assert html =~ "dashboard-chart"
-    assert html =~ "phx-hook=\"Dashboard\""
+    assert html =~ "Readership"
+    assert html =~ "Open stats"
+    assert html =~ "Total views"
   end
 
-  test "renders back link", %{conn: conn} do
+  test "renders the empty state when nothing has been read", %{conn: conn} do
     {:ok, _view, html} = live(conn, ~p"/open_dashboard")
 
-    assert html =~ "Back to posts"
+    assert html =~ "stats__empty" or html =~ "bars"
   end
 
-  test "handles join broadcast by re-rendering dashboard", %{conn: conn} do
+  test "renders bars once a post has views", %{conn: conn} do
+    :telemetry.execute([:blog, :visit], %{}, %{title: "2024-01-15_test_post"})
+
+    {:ok, _view, html} = live(conn, ~p"/open_dashboard")
+
+    assert html =~ "bar__meter"
+    assert html =~ "Test Post"
+  end
+
+  test "handles join broadcast by re-rendering", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/open_dashboard")
 
     BlogWeb.Endpoint.broadcast("show", "join", %{title: "some_post"})
-    assert render(view) =~ "Analytics"
+    assert render(view) =~ "Readership"
   end
 
   test "handles unknown messages without crashing", %{conn: conn} do
     {:ok, view, _html} = live(conn, ~p"/open_dashboard")
 
     send(view.pid, %{topic: "show", event: "other"})
-    assert render(view) =~ "Analytics"
+    assert render(view) =~ "Readership"
   end
 end

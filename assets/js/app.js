@@ -1,74 +1,61 @@
-// We import the CSS which is extracted to its own file by esbuild.
-// Remove this line if you add a your own CSS build pipeline (e.g postcss).
 import '../css/app.css'
-import hljs from 'highlight.js/lib/core'
-import elixir from 'highlight.js/lib/languages/elixir'
-import javascript from 'highlight.js/lib/languages/javascript'
-import bash from 'highlight.js/lib/languages/bash'
-import sql from 'highlight.js/lib/languages/sql'
-import json from 'highlight.js/lib/languages/json'
-import xml from 'highlight.js/lib/languages/xml'
-import 'highlight.js/styles/github-dark.css'
-
-hljs.registerLanguage('elixir', elixir)
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('sql', sql)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('xml', xml)
-hljs.registerLanguage('html', xml)
-
-// If you want to use Phoenix channels, run `mix help phx.gen.channel`
-// to get started and then uncomment the line below.
-// import "./user_socket.js"
-
-// You can include dependencies in two ways.
-//
-// The simplest option is to put them in assets/vendor and
-// import them using relative paths:
-//
-//     import "../vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package --prefix assets` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import 'phoenix_html'
-// Establish Phoenix Socket and LiveView configuration.
 import { Socket } from 'phoenix'
 import { LiveSocket } from 'phoenix_live_view'
-import Dashboard from './hook/dashboard'
-import ReadTag from './hook/read_tag'
+import Presence from './hook/read_tag'
 import { hooks as colocatedHooks } from 'phoenix-colocated/blog'
 import topbar from '../vendor/topbar'
-
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute('content')
 
 let params = { _csrf_token: csrfToken }
-let hooks = { Dashboard, ReadTag, ...colocatedHooks }
+let hooks = { Presence, ...colocatedHooks }
 let liveSocket = new LiveSocket('/live', Socket, { params, hooks })
 
-// Show progress bar on live navigation and form submits
-topbar.config({ barColors: { 0: '#29d' }, shadowColor: 'rgba(0, 0, 0, .3)' })
-window.addEventListener('phx:page-loading-start', (info) => topbar.show())
-window.addEventListener('phx:page-loading-stop', (info) => topbar.hide())
+topbar.config({
+  barColors: { 0: getComputedStyle(document.documentElement).getPropertyValue('--signal') || '#d4573a' },
+  shadowColor: 'rgba(0, 0, 0, .2)',
+})
+window.addEventListener('phx:page-loading-start', () => topbar.show(200))
+window.addEventListener('phx:page-loading-stop', () => topbar.hide())
 
-// connect if there are any LiveViews on the page
 liveSocket.connect()
 setTimeout(() => liveSocket.main.channel.push('reader', { csrfToken }), 10000)
 window.liveSocket = liveSocket
 
-// Syntax highlighting
-function highlightAll() {
-  document.querySelectorAll('pre code').forEach((el) => {
-    if (!el.dataset.highlighted) hljs.highlightElement(el)
-  })
-}
-window.addEventListener('phx:page-loading-stop', highlightAll)
-highlightAll()
+document.addEventListener('click', (event) => {
+  const toggle = event.target.closest('[data-theme-toggle]')
+  if (!toggle) return
+
+  const next =
+    document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+  document.documentElement.setAttribute('data-theme', next)
+  try {
+    localStorage.setItem('theme', next)
+  } catch (e) {}
+})
+
+document.addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-copy]')
+  if (!button) return
+
+  const source = button.closest('.code')?.querySelector('.code__source')
+  if (!source) return
+
+  try {
+    await navigator.clipboard.writeText(source.innerText)
+    button.textContent = 'copied'
+    button.dataset.state = 'done'
+  } catch (e) {
+    button.textContent = 'press ⌘C'
+  }
+
+  setTimeout(() => {
+    button.textContent = 'copy'
+    delete button.dataset.state
+  }, 1600)
+})

@@ -116,14 +116,13 @@ defmodule Blog.FeedTest do
       assert xml =~ ~s(type="image/png")
     end
 
-    test "includes category elements for tags" do
+    test "does not emit category elements" do
       stub_posts([{"2024-01-15_test_post", @post_content}])
       Blog.Posts.refresh()
 
       xml = Feed.build()
 
-      assert xml =~ ~s(<category term="elixir")
-      assert xml =~ ~s(<category term="phoenix")
+      refute xml =~ "<category"
     end
 
     test "skips entries without a parseable date in the filename" do

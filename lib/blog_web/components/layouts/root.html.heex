@@ -15,9 +15,23 @@
     <meta name="twitter:creator" content="@filipecabaco" />
     <meta property="og:site_name" content="Filipe Cabaco Blog" />
     <meta property="og:locale" content="en_US" />
-    <meta name="theme-color" content="#0d1117" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1917" />
 
-    <%= if assigns[:title] do %>
+    <link rel="preload" as="font" type="font/woff2" href={~p"/fonts/familjen-grotesk-normal.woff2"} crossorigin="anonymous" />
+    <link rel="preload" as="font" type="font/woff2" href={~p"/fonts/literata-normal.woff2"} crossorigin="anonymous" />
+
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var theme = saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch (e) {}
+      })();
+    </script>
+
+    <%= if assigns[:og_article] do %>
       <meta name="description" content={assigns[:description] || ""} />
       <link rel="canonical" href={BlogWeb.Endpoint.url() <> "/post/#{@title}"} />
       <meta name="twitter:card" content="summary_large_image" />
@@ -35,9 +49,6 @@
         <meta property="article:published_time" content={@published_date} />
       <% end %>
       <meta property="article:author" content="Filipe Cabaco" />
-      <%= for tag <- (assigns[:tags] || []) do %>
-        <meta property="article:tag" content={tag} />
-      <% end %>
       <meta name="twitter:label1" content="Written by" />
       <meta name="twitter:data1" content="Filipe Cabaco" />
       <%= if assigns[:reading_time] do %>
@@ -63,7 +74,7 @@
     <.live_title prefix="Filipe Cabaco Blog ">
       <%= assigns[:page_title] || "" %>
     </.live_title>
-    <%= if assigns[:title] do %>
+    <%= if assigns[:og_article] do %>
       <script type="application/ld+json">
         <%= raw(Jason.encode!(%{
           "@context" => "https://schema.org",
@@ -75,8 +86,7 @@
           "datePublished" => assigns[:published_date],
           "author" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com"},
           "publisher" => %{"@type" => "Person", "name" => "Filipe Cabaco", "url" => "https://filipecabaco.com", "logo" => %{"@type" => "ImageObject", "url" => BlogWeb.Endpoint.url() <> "/images/logo.png"}},
-          "mainEntityOfPage" => %{"@type" => "WebPage", "@id" => BlogWeb.Endpoint.url() <> "/post/#{@title}"},
-          "keywords" => Enum.join(assigns[:tags] || [], ", ")
+          "mainEntityOfPage" => %{"@type" => "WebPage", "@id" => BlogWeb.Endpoint.url() <> "/post/#{@title}"}
         })) %>
       </script>
     <% else %>
@@ -95,14 +105,39 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>
   </head>
   <body>
-    <header class="site-header">
-      <div class="container" style="max-width: 1200px;">
-        <nav class="site-nav">
-          <a href="/" class="site-logo" data-phx-link="redirect" data-phx-link-state="push">filipecabaco.com</a>
-          <a href="/open_dashboard" class="nav-link" data-phx-link="redirect" data-phx-link-state="push">dashboard</a>
-        </nav>
-      </div>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <nav class="masthead__inner" aria-label="Primary">
+        <a href="/" class="masthead__mark" data-phx-link="redirect" data-phx-link-state="push">filipecabaco</a>
+        <div class="masthead__nav">
+          <a href="/about" class="masthead__link" data-phx-link="redirect" data-phx-link-state="push">about</a>
+          <a href="/open_dashboard" class="masthead__link" data-phx-link="redirect" data-phx-link-state="push">stats</a>
+          <a href="/atom" class="masthead__link">feed</a>
+          <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark">
+            <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2" />
+              <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4" stroke-linecap="round" />
+            </svg>
+            <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2Z" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
+      </nav>
     </header>
+
     {@inner_content}
+
+    <footer class="colophon">
+      <div class="colophon__inner">
+        <p class="label">Filipe Cabaço &middot; written in Lisbon</p>
+        <div class="colophon__links">
+          <a href="https://github.com/filipecabaco">GitHub</a>
+          <a href="https://github.com/filipecabaco/my_blog">Source</a>
+          <a href="/atom">Atom feed</a>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>

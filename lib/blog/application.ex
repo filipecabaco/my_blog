@@ -5,6 +5,8 @@ defmodule Blog.Application do
 
   @impl true
   def start(_type, _args) do
+    Blog.Card.init_cache()
+
     children = [
       BlogWeb.Telemetry,
       {Phoenix.PubSub, name: Blog.PubSub},

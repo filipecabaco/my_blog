@@ -3,6 +3,7 @@ defmodule Blog.Posts do
   require Logger
 
   @url "https://api.github.com/repos/filipecabaco/my_blog/contents/posts"
+  @default_branch "main"
   @table __MODULE__
   @ttl :timer.minutes(30)
   @refresh_interval :timer.minutes(25)
@@ -106,26 +107,45 @@ defmodule Blog.Posts do
     end
   end
 
-  @spec tags(String.t()) :: [String.t()]
-  def tags(post) do
-    case Regex.run(~r/^tags:\s*(.+)$/m, post) do
-      [_, tags_string] ->
-        tags_string
-        |> String.split(",")
-        |> Enum.map(&String.trim/1)
-        |> Enum.reject(&(&1 == ""))
+  @doc """
+  The title to show for a post: the `# Heading` if there is one, otherwise the
+  slug with its date prefix removed.
+  """
+  @spec display_title(String.t(), String.t()) :: String.t()
+  def display_title(slug, content) do
+    case title(content) do
+      "" -> slug |> String.replace(~r/^\d{4}-\d{2}-\d{2}[_-]?/, "") |> Phoenix.Naming.humanize()
+      title -> title
+    end
+  end
 
-      nil ->
-        []
+  @doc """
+  The ISO date encoded in a post slug, or an empty string.
+  """
+  @spec date(String.t()) :: String.t()
+  def date(slug) do
+    case Regex.run(~r/^(\d{4}-\d{2}-\d{2})/, slug) do
+      [_, date] -> date
+      nil -> ""
     end
   end
 
   @spec description(String.t()) :: String.t()
   def description(post) do
     case Regex.run(~r/# .*\n(?:tags:.*\n)?\n(.*)/, post) do
-      [_, description] -> String.trim(description)
+      [_, description] -> description |> strip_markdown() |> String.trim()
       nil -> ""
     end
+  end
+
+  defp strip_markdown(text) do
+    text
+    |> String.replace(~r/!\[([^\]]*)\]\([^)]*\)/, "")
+    |> String.replace(~r/\[([^\]]*)\]\s*\([^)]*\)/, "\\1")
+    |> String.replace(~r/`([^`]*)`/, "\\1")
+    |> String.replace(~r/\*\*([^*]+)\*\*/, "\\1")
+    |> String.replace(~r/(?<!\w)[*_]([^*_]+)[*_](?!\w)/, "\\1")
+    |> String.replace(~r/\s+/, " ")
   end
 
   @spec published_date(String.t()) :: String.t() | nil
@@ -146,20 +166,28 @@ defmodule Blog.Posts do
 
   @spec parse(String.t()) :: String.t() | {:error, String.t()}
   def parse(post) do
-    stripped = Regex.replace(~r/^tags:\s*.+$/m, post, "")
-
-    case Earmark.as_html(stripped) do
-      {:ok, html, _warnings} ->
-        html
-
-      {:error, _html, errors} ->
-        Logger.error("Failed to parse markdown: #{inspect(errors)}")
-        {:error, "Failed to parse markdown"}
+    case post |> strip_tags() |> Blog.Markdown.render() do
+      {:ok, html, _headings} -> html
+      {:error, reason} -> {:error, reason}
     end
   end
 
+  @doc """
+  Renders a post as `{:ok, html, headings}`. Unlike `parse/1` this also drops
+  the leading `# Title`, which the page renders itself.
+  """
+  @spec render(String.t()) :: {:ok, String.t(), [Blog.Markdown.heading()]} | {:error, String.t()}
+  def render(post) do
+    post
+    |> strip_tags()
+    |> then(&Regex.replace(~r/\A\s*#[^\n#][^\n]*\n/, &1, ""))
+    |> Blog.Markdown.render()
+  end
+
+  defp strip_tags(post), do: Regex.replace(~r/^tags:\s*.+$/m, post, "")
+
   defp do_refresh do
-    titles = fetch_titles("master")
+    titles = fetch_titles(@default_branch)
 
     if titles != [] do
       insert(:titles, titles)
@@ -167,7 +195,7 @@ defmodule Blog.Posts do
       titles
       |> Enum.map(&String.replace(&1, ".md", ""))
       |> Enum.each(fn title ->
-        case fetch_post(title, "master") do
+        case fetch_post(title, @default_branch) do
           {:error, _} -> :ok
           post -> insert({:post, title}, post)
         end

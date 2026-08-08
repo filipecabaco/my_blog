@@ -41,6 +41,11 @@ defmodule Blog.ReadTag.Supervisor do
   def set_title(id, title), do: GenServer.cast(ReadTag.via(id), {:set_title, title})
   def set_position(id, position), do: GenServer.cast(ReadTag.via(id), {:set_position, position})
 
+  @doc "How many readers are connected anywhere on the site right now."
+  def count do
+    Registry.count(Blog.ReadTag.Registry)
+  end
+
   def get_for_title(title) do
     Registry.select(Blog.ReadTag.Registry, [{{:"$1", :_, :_}, [], [:"$1"]}])
     |> Enum.map(&get_state/1)

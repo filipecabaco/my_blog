@@ -1,124 +1,85 @@
 ---
 name: image-generation-strategy
 description: >
-  Every blog post MUST have a generated card image at priv/static/images/posts/{slug}.png.
-  Images are topic-based SVG illustrations converted to PNG via rsvg-convert, following the GitHub dark theme.
-  When creating a new post, always generate its image. When updating tags or title, regenerate.
+  Share cards are rendered on demand by the app, not checked into the repo.
+  There is nothing to generate when writing a post. Read this before adding image
+  assets for posts, or changing the card layout, the brand tokens or the fonts.
 license: MIT
 metadata:
   author: filipecabaco
-  version: "3.1.0"
+  version: "5.0.0"
 ---
 
-# Image Generation Strategy
+# Share cards
 
-Every blog post requires a card image. Images are **illustration-only** (no title, no tags — those are shown in the HTML card below the image). Generated as SVG then converted to PNG.
+**Do not generate or commit card images.** `Blog.Card` draws them on request, so a
+card can never fall out of step with a post's title or the brand.
 
-**Model guidance**: When invoked as part of a larger workflow, use `opus` for SVG generation — this is creative/implementation work.
+| Route | Card |
+|---|---|
+| `/images/posts/{slug}.png` | the post's card |
+| `/images/og-root.png` | the site card |
 
-## Required: Generate Image for Every New Post
+Writing a post requires no image work at all. Adding the post is enough.
 
-When a new blog post is created, you MUST:
-1. Read the post title, tags, and content to understand the topic
-2. Choose an illustration style based on tags (see mapping below)
-3. Generate an SVG with **only the illustration and accent line** (no title text, no tag pills)
-4. Convert to PNG at `priv/static/images/posts/{slug}.png`
-5. The slug is the filename without `.md` (e.g., `2022-07-16_making_my_blog`)
+## How it works
 
-## File Locations
+`Blog.Card.svg/2` lays the card out as SVG from post metadata and the brand
+tokens, then `rsvg-convert` rasterises it to a 1200x630 PNG. Results are cached
+in ETS against a hash of the title, date and reading time, so each card is drawn once
+and redrawn automatically when any of those change.
 
-| What | Path |
-|------|------|
-| Generated PNGs | `priv/static/images/posts/{slug}.png` |
-| Image in template | `"/images/posts/#{post.title}.png"` (in index.ex) |
-| CSS class | `.post-card-image` |
+Fonts come from `priv/fonts` via a generated `fontconfig` file, so rendering does
+not depend on what is installed on the host. `rsvg-convert` is installed in the
+runtime image by the Dockerfile.
 
-## Visual Style (GitHub Dark Theme)
-
-All images are **1200x630** and strictly monochromatic:
-
-| Element | Color |
-|---------|-------|
-| Background | `#0d1117` |
-| Panel/card fills | `#161b22` |
-| Tertiary fills | `#1c2128` |
-| Primary text (title) | `#e6edf3` |
-| Secondary text (labels) | `#8b949e` |
-| Muted elements | `#6e7681` |
-| Borders/strokes | `#30363d` |
-| Accent (bottom line) | `#58a6ff` at 30% opacity |
-| Tag pill bg | `#1c2128` with `#30363d` border |
-
-**Rules:**
-- Monospace font everywhere (monospace in SVG)
-- Monochromatic only - greys and one blue accent
-- No neon, no gradients, no bright colors, no emoji
-- Abstract/geometric illustrations, not code screenshots
-- 8px radius on panels, 4px on pills, 6-10px on windows
-
-## Tag-to-Illustration Mapping
-
-Choose illustration based on the post's primary tags:
-
-| Tags | Illustration | Visual Elements |
-|------|-------------|-----------------|
-| `backend`, `web` | **Browser window** | Window chrome with dots, URL bar, content lines, code block area, card grid |
-| `real-time` | **Connected clients** | Central PubSub node with pulse rings, 4 browser windows connected via dashed lines, live dots on connections |
-| `data-visualization` | **Network graph** | Nodes and edges, central hub, leaf nodes at different levels, labeled connections |
-| `machine-learning` | **Neural network** | Input/hidden/output layers as circles, connection lines between layers, "input"/"output" labels |
-| `applications` | **Desktop window** | Native window frame with title bar, editor area with text lines, sidebar panel with suggestion items |
-| `data` | **Feed/stream** | RSS-style icon (arcs + dot), feed entry cards flowing from source, dashed connecting lines |
-| `backend` (rate limiting) | **Funnel/gate** | Many dots on left (requests), funnel/gate in center with "429", few dots passing through on right, clock |
-| `backend` (statistics) | **Bar chart** | Y/X axes, bars of varying height, dashed grid lines, counter badge |
-| _fallback_ | **Typographic card** | Large title, tag pills, abstract geometric shapes |
-
-## SVG Layout Template
+## Card anatomy
 
 ```
-┌──────────────────────────────────────────┐
-│                                          │
-│     [Topic illustration]                 │
-│     (fills entire 1200x630 canvas)       │
-│                                          │
-│                                          │
-│                                          │
-│  ════════════════════ accent (y=626)     │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ ● FILIPECABACO.COM                                       │
+│                                                          │
+│   Realtime Updates                            ▪▫▪▪▫      │
+│   with LiveView                               ▫▪▫▪▪      │
+│                                               ▪▪▫▫▪      │
+│ ─────────────────────────────────────────────────────    │
+│ 2022-09-13                                 16 MIN READ   │
+└──────────────────────────────────────────────────────────┘
 ```
 
-The illustration fills the full image. Only the accent line at the bottom is added. **Do NOT include title text or tag pills** — those are rendered in the HTML card below the image.
+The title steps down through 84 / 70 / 62 / 56px so it always clears the mark on
+the right. SVG has no line breaking, so `Blog.Card` wraps the title itself.
 
-## Generation Process
+## The mark
+
+`Blog.Mark` builds a 5x5 patch panel whose lit cells come from `sha256(slug)`:
+every post gets a distinct figure from one system, and the same post always draws
+the same one. The site renders the identical mark inline as SVG on the index, via
+the `mark/1` component in `BlogWeb.Layouts`.
+
+## Brand
+
+Cards always use the light theme, since they appear on someone else's background
+in a feed. Tokens are resolved to sRGB in `Blog.Card` because librsvg cannot parse
+`oklch()`; if the tokens in `app.css` change, update the hex values there too.
+
+| Role | Token | sRGB |
+|---|---|---|
+| Ground | `--paper` | `#faf7f3` |
+| Text | `--ink` | `#271f18` |
+| Labels | `--ink-3` | `#87807a` |
+| Rules | `--rule` | `#d9d4ce` |
+| Unlit cells | `--rule-2` | `#c1bbb3` |
+| Mark, dot | `--signal` | `#d33a0c` |
+
+Type: **Familjen Grotesk** for the title, **JetBrains Mono** for labels.
+
+## Icons
+
+`priv/static/images/logo.svg` is the source for the favicon and touch icon. To
+regenerate the raster versions after editing it:
 
 ```bash
-# 1. Write SVG to priv/static/images/posts/{slug}.svg
-# 2. Convert: rsvg-convert {slug}.svg -o {slug}.png -w 1200 -h 630
-# 3. Delete the SVG (keep only PNG)
+rsvg-convert priv/static/images/logo.svg -w 512 -h 512 -o priv/static/images/logo.png
+rsvg-convert priv/static/images/logo.svg -w 180 -h 180 -o priv/static/images/apple-touch-icon.png
 ```
-
-### Accent Line
-
-- Full-width rect at y=626, height=4, fill=#58a6ff, opacity=0.3
-
-## Illustration Guidelines
-
-When drawing SVG illustrations:
-- Use **geometric shapes** (circles, rects, lines) - no complex paths
-- Layer opacity for depth (0.3-0.8 range)
-- Dashed lines (`stroke-dasharray="6,4"`) for connections/data flow
-- Small circles (r=3-6) as live indicator dots
-- Window chrome: rounded rect + 3 dots at top-left + title bar
-- Minimal detail - suggest the concept, don't overload
-- Center the illustration horizontally
-
-## When to Regenerate
-
-- New post created
-- Post title changed
-- Post tags changed
-- Topic significantly shifted
-
-## Dependencies
-
-- `rsvg-convert` (from librsvg via homebrew)
-- ImageMagick 7 (`magick`) available as backup

@@ -21,32 +21,6 @@ defmodule Blog.PostsTest do
     end
   end
 
-  describe "tags/1" do
-    test "extracts comma-separated tags" do
-      post = "# Title\ntags: elixir, phoenix, liveview\n\nDescription"
-      assert Posts.tags(post) == ["elixir", "phoenix", "liveview"]
-    end
-
-    test "returns empty list when no tags line" do
-      post = "# Title\n\nDescription"
-      assert Posts.tags(post) == []
-    end
-
-    test "handles single tag" do
-      post = "# Title\ntags: elixir\n\nDescription"
-      assert Posts.tags(post) == ["elixir"]
-    end
-
-    test "trims whitespace around tags" do
-      post = "# Title\ntags:  elixir ,  phoenix \n\nDescription"
-      assert Posts.tags(post) == ["elixir", "phoenix"]
-    end
-
-    test "returns empty list for empty input" do
-      assert Posts.tags("") == []
-    end
-  end
-
   describe "description/1" do
     test "extracts first paragraph after heading" do
       post = "# Title\n\nThis is the description\n\nMore content"
@@ -96,10 +70,14 @@ defmodule Blog.PostsTest do
       assert html =~ "World</p>"
     end
 
-    test "handles code blocks" do
+    test "highlights code blocks on the server" do
       html = Posts.parse("```elixir\nIO.puts(\"hi\")\n```")
+
       assert html =~ "<code"
-      assert html =~ "IO.puts"
+      assert html =~ "code__source"
+      assert html =~ "ELIXIR" or html =~ "elixir"
+      # Makeup wraps every token, which is what client-side highlighting failed to do.
+      assert html =~ "<span"
     end
 
     test "handles links" do
